@@ -23,8 +23,9 @@
     {
       "gallery": [
         {
-          "kind": "image",
-          "url": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1400&q=80"
+          "kind": "video",
+          "url": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1400&q=80",
+          "upload": "/assets/uploads/videoplayback.mp4"
         },
         {
           "kind": "image",
@@ -54,11 +55,13 @@
       "gallery": [
         {
           "kind": "image",
-          "url": "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1400&q=80"
+          "url": "",
+          "upload": "/assets/uploads/46ed3557cabf2a0347398812f86812f8.jpg"
         },
         {
           "kind": "image",
-          "url": "https://images.unsplash.com/photo-1556740714-a8395b3bf30f?auto=format&fit=crop&w=1400&q=80"
+          "url": "",
+          "upload": "/assets/uploads/junjiyrychy31.jpg"
         }
       ],
       "additionalInfo": [
@@ -83,8 +86,9 @@
     {
       "gallery": [
         {
-          "kind": "image",
-          "url": "https://images.unsplash.com/photo-1481487196290-c152efe083f5?auto=format&fit=crop&w=1400&q=80"
+          "kind": "video",
+          "url": "",
+          "upload": "/assets/uploads/2-am-coffee-a-short-film-sony-fx3-4k-forrain-1080p-.mp4"
         },
         {
           "kind": "image",
