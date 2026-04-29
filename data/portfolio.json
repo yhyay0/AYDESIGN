@@ -28,7 +28,9 @@
       ],
       "title": "Luna Coffee Rebrand",
       "id": 1,
-      "image": "",
+      "image": {
+        "upload": "/assets/uploads/junjiyrychy31.jpg"
+      },
       "tools": [
         "Illustrator",
         "Photoshop",
@@ -46,7 +48,9 @@
       ],
       "title": "FinFlow Mobile App",
       "id": 2,
-      "image": "",
+      "image": {
+        "upload": "/assets/uploads/junjiyrychy31.jpg"
+      },
       "tools": [
         "Figma",
         "FigJam",
