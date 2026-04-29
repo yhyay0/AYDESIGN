@@ -3,11 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const STORAGE_KEY = 'portfolioData';
-const isLocalPreview = () => {
-    const host = window.location.hostname;
-    return host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:';
-};
-
 function resolveMediaValue(value) {
     if (!value) return '';
     if (typeof value === 'string') return value.trim();
@@ -19,52 +14,32 @@ function resolveMediaValue(value) {
     return '';
 }
 
-function normalizeMediaSrc(raw = '') {
-    const src = String(raw).trim();
-    if (!src) return '';
-    if (/^https?:\/\//i.test(src) || src.startsWith('data:') || src.startsWith('blob:')) {
-        return src;
-    }
-    // Normalize local paths from CMS uploads: assets/..., /assets/..., ./assets/...
-    const noDotSlash = src.replace(/^\.\//, '');
-    const noLeadingSlash = noDotSlash.replace(/^\/+/, '');
-    return `/${encodeURI(noLeadingSlash)}`;
-}
+function normalizePortfolioDataShape(data) {
+    const normalized = data && typeof data === 'object' ? { ...data } : {};
+    normalized.profile = normalized.profile && typeof normalized.profile === 'object' ? normalized.profile : {};
+    normalized.profile.contact = normalized.profile.contact && typeof normalized.profile.contact === 'object'
+        ? normalized.profile.contact
+        : {};
+    normalized.profile.skills = Array.isArray(normalized.profile.skills) ? normalized.profile.skills : [];
+    normalized.projects = Array.isArray(normalized.projects) ? normalized.projects : [];
 
-function inferMediaKind(src = '') {
-    const clean = src.toLowerCase().split('?')[0].split('#')[0];
-    if (/\.(mp4|webm|ogg|mov|m4v)$/.test(clean)) return 'video';
-    return 'image';
-}
+    normalized.projects = normalized.projects.map((project, index) => {
+        const nextProject = project && typeof project === 'object' ? { ...project } : {};
+        nextProject.id = typeof nextProject.id === 'number' ? nextProject.id : index + 1;
+        nextProject.title = typeof nextProject.title === 'string' ? nextProject.title : 'Untitled Project';
+        nextProject.category = typeof nextProject.category === 'string' ? nextProject.category : '';
+        nextProject.description = typeof nextProject.description === 'string' ? nextProject.description : '';
+        nextProject.year = nextProject.year || '';
+        nextProject.tools = Array.isArray(nextProject.tools) ? nextProject.tools : [];
+        nextProject.additionalInfo = Array.isArray(nextProject.additionalInfo) ? nextProject.additionalInfo : [];
+        nextProject.image = resolveMediaValue(nextProject.image);
+        nextProject.gallery = Array.isArray(nextProject.gallery)
+            ? nextProject.gallery.map(resolveMediaValue).filter(Boolean)
+            : [];
+        return nextProject;
+    });
 
-function resolveMediaItem(value) {
-    if (!value) return null;
-    if (typeof value === 'string') {
-        const src = normalizeMediaSrc(value);
-        if (!src) return null;
-        return { src, kind: inferMediaKind(src) };
-    }
-    if (typeof value === 'object') {
-        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
-        const url = typeof value.url === 'string' ? value.url.trim() : '';
-        const src = normalizeMediaSrc(upload || url);
-        if (!src) return null;
-        const kind = value.kind === 'video' || value.kind === 'image' ? value.kind : inferMediaKind(src);
-        return { src, kind };
-    }
-    return null;
-}
-
-function resolveProjectPreviewImage(project) {
-    if (!project) return '';
-    const coverItem = resolveMediaItem(project.image);
-    if (coverItem && coverItem.kind === 'image') return coverItem.src;
-    const gallery = Array.isArray(project.gallery) ? project.gallery : [];
-    for (const item of gallery) {
-        const resolved = resolveMediaItem(item);
-        if (resolved && resolved.kind === 'image') return resolved.src;
-    }
-    return '';
+    return normalized;
 }
 
 function getDefaultPortfolioData() {
@@ -156,43 +131,24 @@ async function initApp() {
 }
 
 async function loadPortfolioData() {
-    // In production, always read from repository JSON so all deployed sites stay consistent.
-    if (isLocalPreview()) {
-        const localData = localStorage.getItem(STORAGE_KEY);
-        if (localData) {
-            try {
-                return JSON.parse(localData);
-            } catch (parseError) {
-                console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
-                localStorage.removeItem(STORAGE_KEY);
-            }
+    const localData = localStorage.getItem(STORAGE_KEY);
+    if (localData) {
+        try {
+            return normalizePortfolioDataShape(JSON.parse(localData));
+        } catch (parseError) {
+            console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
+            localStorage.removeItem(STORAGE_KEY);
         }
-    }
-    try {
-        const [profileResponse, projectsResponse] = await Promise.all([
-            fetch(`data/cms/profile.json?t=${Date.now()}`),
-            fetch(`data/cms/projects.json?t=${Date.now()}`)
-        ]);
-        if (profileResponse.ok && projectsResponse.ok) {
-            const profile = await profileResponse.json();
-            const projectsPayload = await projectsResponse.json();
-            return {
-                profile,
-                projects: Array.isArray(projectsPayload.items) ? projectsPayload.items : []
-            };
-        }
-    } catch (cmsFetchError) {
-        console.warn('Split CMS files not available, fallback to portfolio.json.', cmsFetchError);
     }
     try {
         const response = await fetch(`data/portfolio.json?t=${Date.now()}`);
         if (!response.ok) {
             throw new Error(`Failed to fetch data/portfolio.json (status ${response.status})`);
         }
-        return response.json();
+        return normalizePortfolioDataShape(await response.json());
     } catch (fetchError) {
         console.warn('Fetch failed, falling back to default data (likely file:// access).', fetchError);
-        return getDefaultPortfolioData();
+        return normalizePortfolioDataShape(getDefaultPortfolioData());
     }
 }
 
@@ -383,23 +339,18 @@ function initContactForm() {
 
 function renderProjects(projects) {
     const grid = document.getElementById('portfolio-grid');
+    if (!grid) return;
+    if (!Array.isArray(projects) || projects.length === 0) {
+        grid.innerHTML = '';
+        return;
+    }
     grid.innerHTML = projects.map((project, index) => {
         const gridClass = 'md:col-span-1';
-        const coverMedia = resolveMediaItem(project.image);
-        const projectImage = coverMedia && coverMedia.kind === 'image' ? coverMedia.src : '';
         
         return `
             <div class="project-card group ${gridClass} animate-slide-up" style="animation-delay: ${index * 0.1}s" onclick="openModal(${project.id})">
                 <div class="relative overflow-hidden aspect-[16/10]">
-                    ${projectImage
-                        ? `<img src="${projectImage}" alt="${project.title}" class="w-full h-full object-cover">`
-                        : `<div class="w-full h-full bg-gray-100 flex items-center justify-center text-center px-6">
-                            <div>
-                                <p class="text-[10px] font-bold tracking-widest uppercase mb-3 text-gray-400">${project.category}</p>
-                                <h3 class="text-xl font-bold font-display text-black">${project.title}</h3>
-                            </div>
-                        </div>`
-                    }
+                    <img src="${project.image}" alt="${project.title}" class="w-full h-full object-cover">
                     <div class="project-overlay">
                         <p class="text-[10px] font-bold tracking-widest uppercase mb-2 text-gray-400">${project.category}</p>
                         <h3 class="text-2xl font-bold font-display text-black mb-4">${project.title}</h3>
@@ -463,8 +414,7 @@ async function openModal(projectId, options = {}) {
     const animateIn = options.animateIn !== false;
 
     const additionalInfo = (project.additionalInfo || []).filter(item => item && item.trim());
-    const projectMediaItems = [resolveMediaItem(project.image), ...((project.gallery || []).map(resolveMediaItem))]
-        .filter(Boolean);
+    const projectImages = [project.image, ...(project.gallery || [])].filter(img => img && img.trim());
 
     content.innerHTML = `
         <div id="modal-content-inner" class="opacity-100 translate-y-0 transition-all duration-300">
@@ -481,7 +431,7 @@ async function openModal(projectId, options = {}) {
 
                 <div class="mb-10 md:mb-14">
                     <div class="flex flex-wrap gap-2 md:gap-3">
-                        ${project.tools.map(tool => `<span class="px-3 py-1 bg-gray-100 text-[10px] font-bold tracking-widest uppercase text-gray-500">${tool}</span>`).join('')}
+                        ${(project.tools || []).map(tool => `<span class="px-3 py-1 bg-gray-100 text-[10px] font-bold tracking-widest uppercase text-gray-500">${tool}</span>`).join('')}
                     </div>
                     ${additionalInfo.length > 0 ? `
                         <ul class="mt-6 space-y-2 text-sm md:text-base text-gray-700 max-w-4xl">
@@ -491,19 +441,11 @@ async function openModal(projectId, options = {}) {
                 </div>
 
                 <div class="space-y-6 md:space-y-10">
-                    ${projectMediaItems.length > 0
-                        ? projectMediaItems.map((media) => `
-                            <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
-                                ${media.kind === 'video'
-                                    ? `<video src="${media.src}" autoplay muted loop playsinline class="project-detail-image w-full h-auto object-contain bg-black"></video>`
-                                    : `<img src="${media.src}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">`
-                                }
-                            </div>
-                        `).join('')
-                        : `<div class="w-full bg-gray-50 border border-black/5 px-6 py-12 text-center text-sm text-gray-500">
-                            Visual assets for this project are currently hidden.
-                        </div>`
-                    }
+                    ${projectImages.map((img) => `
+                        <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
+                            <img src="${img}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">
+                        </div>
+                    `).join('')}
                 </div>
 
                 <div class="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-black/5 flex justify-between items-center">
@@ -606,15 +548,16 @@ function initHeroProjectScrubber(projects) {
     const scrubber = document.getElementById('hero-project-scrubber');
     const trigger = document.getElementById('hero-project-trigger');
     const image = document.getElementById('hero-project-image');
-    const fallback = document.getElementById('hero-project-fallback');
-    const fallbackText = document.getElementById('hero-project-fallback-text');
-    if (!interactiveArea || !scrubber || !trigger || !image || !fallback || !fallbackText) return;
+    if (!interactiveArea || !scrubber || !trigger || !image) return;
     if (!Array.isArray(projects) || projects.length === 0) return;
 
     let currentIndex = 0;
+    let lastX = null;
+    let movementCarry = 0;
     let isDissolving = false;
     let queuedIndex = null;
     const total = projects.length;
+    const STEP_THRESHOLD_PX = 24;
 
     image.style.transition = 'opacity 150ms ease';
 
@@ -622,18 +565,8 @@ function initHeroProjectScrubber(projects) {
         const project = projects[safeIndex];
         if (!project) return;
         currentIndex = safeIndex;
-        const previewImage = resolveProjectPreviewImage(project);
+        image.src = project.image;
         image.alt = project.title;
-        if (previewImage) {
-            image.src = previewImage;
-            image.style.opacity = '0.3';
-            fallback.classList.add('hidden');
-        } else {
-            image.removeAttribute('src');
-            image.style.opacity = '0';
-            fallbackText.textContent = project.title || 'Preview Projects';
-            fallback.classList.remove('hidden');
-        }
     };
 
     const setActiveProject = (index, immediate = false) => {
@@ -641,6 +574,7 @@ function initHeroProjectScrubber(projects) {
         if (safeIndex === currentIndex && !isDissolving) return;
 
         if (immediate) {
+            image.style.opacity = '0.3';
             applyProjectImage(safeIndex);
             return;
         }
@@ -654,6 +588,7 @@ function initHeroProjectScrubber(projects) {
         image.style.opacity = '0';
         window.setTimeout(() => {
             applyProjectImage(safeIndex);
+            image.style.opacity = '0.3';
             isDissolving = false;
             if (queuedIndex !== null && queuedIndex !== currentIndex) {
                 const nextIndex = queuedIndex;
@@ -665,13 +600,36 @@ function initHeroProjectScrubber(projects) {
         }, 150);
     };
 
+    interactiveArea.addEventListener('mouseenter', () => {
+        lastX = null;
+        movementCarry = 0;
+    });
+
+    interactiveArea.addEventListener('mouseleave', () => {
+        lastX = null;
+        movementCarry = 0;
+    });
+
     interactiveArea.addEventListener('mousemove', (event) => {
         const rect = interactiveArea.getBoundingClientRect();
         if (rect.width <= 0) return;
         const currentX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-        const ratio = rect.width <= 1 ? 0 : currentX / (rect.width - 1);
-        const nextIndex = Math.max(0, Math.min(total - 1, Math.round(ratio * (total - 1))));
-        if (nextIndex !== currentIndex) setActiveProject(nextIndex, false);
+        if (lastX === null) {
+            lastX = currentX;
+            return;
+        }
+        const deltaX = currentX - lastX;
+        lastX = currentX;
+        movementCarry += deltaX;
+        if (Math.abs(movementCarry) < STEP_THRESHOLD_PX) return;
+        if (isDissolving) return;
+
+        const direction = movementCarry > 0 ? 1 : -1;
+        const nextIndex = Math.max(0, Math.min(total - 1, currentIndex + direction));
+        movementCarry -= direction * STEP_THRESHOLD_PX;
+        if (nextIndex !== currentIndex) {
+            setActiveProject(nextIndex, false);
+        }
     });
 
     trigger.addEventListener('click', () => {

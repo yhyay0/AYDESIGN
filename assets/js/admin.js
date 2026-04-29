@@ -1,6 +1,41 @@
 // Global data storage
 let portfolioData = {};
 const STORAGE_KEY = 'portfolioData';
+function resolveMediaValue(value) {
+    if (!value) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'object') {
+        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
+        const url = typeof value.url === 'string' ? value.url.trim() : '';
+        return upload || url || '';
+    }
+    return '';
+}
+
+function normalizePortfolioDataShape() {
+    portfolioData.profile = portfolioData.profile && typeof portfolioData.profile === 'object' ? portfolioData.profile : {};
+    portfolioData.profile.contact = portfolioData.profile.contact && typeof portfolioData.profile.contact === 'object'
+        ? portfolioData.profile.contact
+        : {};
+    portfolioData.profile.skills = Array.isArray(portfolioData.profile.skills) ? portfolioData.profile.skills : [];
+    portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
+
+    portfolioData.projects = portfolioData.projects.map((project, index) => {
+        const nextProject = project && typeof project === 'object' ? { ...project } : {};
+        nextProject.id = typeof nextProject.id === 'number' ? nextProject.id : index + 1;
+        nextProject.title = typeof nextProject.title === 'string' ? nextProject.title : 'Untitled Project';
+        nextProject.category = typeof nextProject.category === 'string' ? nextProject.category : '';
+        nextProject.description = typeof nextProject.description === 'string' ? nextProject.description : '';
+        nextProject.year = nextProject.year || '';
+        nextProject.tools = Array.isArray(nextProject.tools) ? nextProject.tools : [];
+        nextProject.additionalInfo = Array.isArray(nextProject.additionalInfo) ? nextProject.additionalInfo : [];
+        nextProject.image = resolveMediaValue(nextProject.image);
+        nextProject.gallery = Array.isArray(nextProject.gallery)
+            ? nextProject.gallery.map(resolveMediaValue).filter(Boolean)
+            : [];
+        return nextProject;
+    });
+}
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -106,9 +141,7 @@ async function loadPortfolioData() {
             persistPortfolioData();
         }
 
-        portfolioData.profile = portfolioData.profile || {};
-        portfolioData.profile.contact = portfolioData.profile.contact || {};
-        portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
+        normalizePortfolioDataShape();
         populateProfileForm();
         renderProjects();
         updateJSONPreview();
