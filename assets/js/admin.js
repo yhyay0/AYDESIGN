@@ -497,7 +497,6 @@ async function uploadNewProjectImage(file) {
     try {
         const dataUrl = await readAndCompressImage(file);
         document.getElementById('new-image').value = dataUrl;
-        alert('Local upload is saved as embedded data. For faster website loading, use an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }
@@ -509,7 +508,6 @@ async function uploadProjectImage(index, file) {
         portfolioData.projects[index].image = dataUrl;
         renderProjects();
         updateJSONPreview();
-        alert('Embedded image saved. For faster loading, replace with an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }
@@ -524,7 +522,6 @@ async function uploadProjectGalleryImage(index, itemIndex, file) {
         portfolioData.projects[index].gallery[itemIndex] = dataUrl;
         renderProjects();
         updateJSONPreview();
-        alert('Embedded gallery image saved. For faster loading, replace with an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }
