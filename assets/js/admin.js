@@ -1,7 +1,91 @@
 // Global data storage
 let portfolioData = {};
 const STORAGE_KEY = 'portfolioData';
+const STORAGE_DB_NAME = 'AYDesignStorage';
+const STORAGE_DB_VERSION = 1;
+const STORAGE_STORE_NAME = 'keyValue';
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
+let storageDbPromise = null;
+
+function getStorageDb() {
+    if (storageDbPromise) return storageDbPromise;
+    storageDbPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+            reject(new Error('IndexedDB not supported'));
+            return;
+        }
+        const request = window.indexedDB.open(STORAGE_DB_NAME, STORAGE_DB_VERSION);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORAGE_STORE_NAME)) {
+                db.createObjectStore(STORAGE_STORE_NAME);
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+    });
+    return storageDbPromise;
+}
+
+async function getStoredData() {
+    try {
+        const db = await getStorageDb();
+        const data = await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORAGE_STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORAGE_STORE_NAME);
+            const req = store.get(STORAGE_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error || new Error('IndexedDB read failed'));
+        });
+        if (data) return data;
+    } catch (error) {
+        console.warn('IndexedDB read failed, trying localStorage.', error);
+    }
+
+    const localData = localStorage.getItem(STORAGE_KEY);
+    if (!localData) return null;
+    try {
+        const parsed = JSON.parse(localData);
+        await saveStoredData(parsed);
+        localStorage.removeItem(STORAGE_KEY);
+        return parsed;
+    } catch (error) {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+    }
+}
+
+async function saveStoredData(value) {
+    try {
+        const db = await getStorageDb();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORAGE_STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORAGE_STORE_NAME);
+            const req = store.put(value, STORAGE_KEY);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error || new Error('IndexedDB write failed'));
+        });
+    } catch (error) {
+        console.warn('IndexedDB write failed, using localStorage fallback.', error);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+    }
+}
+
+async function clearStoredData() {
+    try {
+        const db = await getStorageDb();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORAGE_STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORAGE_STORE_NAME);
+            const req = store.delete(STORAGE_KEY);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error || new Error('IndexedDB delete failed'));
+        });
+    } catch (error) {
+        console.warn('IndexedDB clear failed.', error);
+    }
+    localStorage.removeItem(STORAGE_KEY);
+}
 function normalizeImageReference(value) {
     if (!value || typeof value !== 'string') return '';
     const trimmed = value.trim();
@@ -126,16 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Load portfolio data from JSON
 async function loadPortfolioData() {
     try {
-        const localData = localStorage.getItem(STORAGE_KEY);
+        const storedData = await getStoredData();
         let loadedFromLocal = false;
-        if (localData) {
-            try {
-                portfolioData = JSON.parse(localData);
-                loadedFromLocal = true;
-            } catch (parseError) {
-                console.warn('Invalid local portfolio data. Clearing localStorage entry.', parseError);
-                localStorage.removeItem(STORAGE_KEY);
-            }
+        if (storedData) {
+            portfolioData = storedData;
+            loadedFromLocal = true;
         }
 
         if (!loadedFromLocal) {
@@ -224,6 +303,12 @@ function renderProjects() {
                     <input type="text" value="${project.image}" onchange="updateProject(${index}, 'image', this.value)" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
                     <label class="block text-xs text-gray-500 mt-2 mb-1">Or upload local image</label>
                     <input type="file" accept="image/*" onchange="uploadProjectImage(${index}, this.files[0])" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                    ${project.image ? `
+                        <div class="mt-3">
+                            <p class="text-xs text-gray-500 mb-1">Preview</p>
+                            <img src="${project.image}" alt="${project.title}" class="w-24 h-24 object-cover border border-gray-200 rounded">
+                        </div>
+                    ` : ''}
                 </div>
             </div>
             <div class="mb-6">
@@ -258,6 +343,11 @@ function renderProjects() {
                         <div class="flex flex-col md:flex-row gap-2">
                             <input type="text" value="${img}" onchange="updateProjectListItem(${index}, 'gallery', ${imgIndex}, this.value)" class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-black" placeholder="assets/img/projects/another-image.png">
                             <input type="file" accept="image/*" onchange="uploadProjectGalleryImage(${index}, ${imgIndex}, this.files[0])" class="w-full md:w-48 border border-gray-300 rounded px-2 py-2 text-xs">
+                            ${img ? `<img src="${img}" alt="Gallery preview" class="w-16 h-16 object-cover border border-gray-200 rounded">` : '<div class="w-16 h-16 border border-dashed border-gray-200 rounded"></div>'}
+                            <div class="flex gap-1">
+                                <button type="button" onclick="moveProjectListItem(${index}, 'gallery', ${imgIndex}, -1)" class="shrink-0 text-xs px-2 py-2 border border-gray-300 rounded hover:border-black transition" ${imgIndex === 0 ? 'disabled' : ''}>↑</button>
+                                <button type="button" onclick="moveProjectListItem(${index}, 'gallery', ${imgIndex}, 1)" class="shrink-0 text-xs px-2 py-2 border border-gray-300 rounded hover:border-black transition" ${imgIndex === (project.gallery || []).length - 1 ? 'disabled' : ''}>↓</button>
+                            </div>
                             <button type="button" onclick="removeProjectListItem(${index}, 'gallery', ${imgIndex})" class="shrink-0 text-red-600 hover:text-red-800 font-semibold text-xs px-3 py-2 border border-red-200 rounded md:border-0 md:rounded-none md:px-2 md:py-0">Delete</button>
                         </div>
                     `).join('')}
@@ -303,6 +393,16 @@ function removeProjectListItem(index, field, itemIndex) {
     updateJSONPreview();
 }
 
+function moveProjectListItem(index, field, itemIndex, direction) {
+    if (!Array.isArray(portfolioData.projects[index][field])) return;
+    const list = portfolioData.projects[index][field];
+    const targetIndex = itemIndex + direction;
+    if (targetIndex < 0 || targetIndex >= list.length) return;
+    [list[itemIndex], list[targetIndex]] = [list[targetIndex], list[itemIndex]];
+    renderProjects();
+    updateJSONPreview();
+}
+
 // Delete project
 function deleteProject(index) {
     if (confirm('Are you sure you want to delete this project?')) {
@@ -339,8 +439,8 @@ function addProject() {
     alert('Project added successfully!');
 }
 
-const IMAGE_MAX_DIMENSION = 1920;
-const IMAGE_OUTPUT_QUALITY = 0.88;
+const IMAGE_MAX_DIMENSION = 1280;
+const IMAGE_OUTPUT_QUALITY = 0.76;
 
 function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
@@ -389,8 +489,8 @@ function compressImageDataUrl(sourceDataUrl, outputMime = 'image/jpeg', quality 
 
 async function readAndCompressImage(file) {
     const originalDataUrl = await readFileAsDataUrl(file);
-    // Prefer JPEG for strong size reduction while retaining visual quality.
-    return compressImageDataUrl(originalDataUrl, 'image/jpeg', IMAGE_OUTPUT_QUALITY);
+    // Prefer WebP for faster loading and smaller footprint.
+    return compressImageDataUrl(originalDataUrl, 'image/webp', IMAGE_OUTPUT_QUALITY);
 }
 
 async function uploadNewProjectImage(file) {
@@ -459,14 +559,14 @@ function updateJSONPreview() {
 }
 
 function persistPortfolioData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(portfolioData));
+    saveStoredData(portfolioData);
 }
 
-function clearLocalData() {
+async function clearLocalData() {
     const shouldClear = confirm('Clear local autosaved data and reload from file/default data?');
     if (!shouldClear) return;
-    localStorage.removeItem(STORAGE_KEY);
-    loadPortfolioData();
+    await clearStoredData();
+    await loadPortfolioData();
     alert('Local autosaved data cleared.');
 }
 

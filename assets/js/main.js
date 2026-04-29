@@ -3,7 +3,46 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const STORAGE_KEY = 'portfolioData';
+const STORAGE_DB_NAME = 'AYDesignStorage';
+const STORAGE_DB_VERSION = 1;
+const STORAGE_STORE_NAME = 'keyValue';
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
+let storageDbPromise = null;
+
+function getStorageDb() {
+    if (storageDbPromise) return storageDbPromise;
+    storageDbPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+            reject(new Error('IndexedDB not supported'));
+            return;
+        }
+        const request = window.indexedDB.open(STORAGE_DB_NAME, STORAGE_DB_VERSION);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORAGE_STORE_NAME)) {
+                db.createObjectStore(STORAGE_STORE_NAME);
+            }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+    });
+    return storageDbPromise;
+}
+
+async function getStoredData() {
+    try {
+        const db = await getStorageDb();
+        return await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORAGE_STORE_NAME, 'readonly');
+            const store = tx.objectStore(STORAGE_STORE_NAME);
+            const req = store.get(STORAGE_KEY);
+            req.onsuccess = () => resolve(req.result || null);
+            req.onerror = () => reject(req.error || new Error('IndexedDB read failed'));
+        });
+    } catch (error) {
+        return null;
+    }
+}
 function toFastImageUrl(value) {
     if (!value) return '';
     const trimmed = value.trim();
@@ -142,6 +181,11 @@ async function initApp() {
 }
 
 async function loadPortfolioData() {
+    const storedData = await getStoredData();
+    if (storedData) {
+        return normalizePortfolioDataShape(storedData);
+    }
+
     const localData = localStorage.getItem(STORAGE_KEY);
     if (localData) {
         try {
