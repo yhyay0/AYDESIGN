@@ -1,0 +1,59 @@
+backend:
+  name: github
+  repo: yhyay0/AYDESIGN
+  branch: main
+
+media_folder: "assets/uploads"
+public_folder: "/assets/uploads"
+
+collections:
+  - name: "site"
+    label: "Site Content"
+    files:
+      - file: "data/portfolio.json"
+        label: "Portfolio Data"
+        name: "portfolio"
+        fields:
+          - label: "Profile"
+            name: "profile"
+            widget: "object"
+            fields:
+              - { label: "Role", name: "role", widget: "string" }
+              - { label: "Subtitle", name: "subtitle", widget: "text" }
+              - { label: "Bio", name: "bio", widget: "text" }
+              - { label: "Terms of Use", name: "termsOfUse", widget: "text" }
+              - label: "Skills"
+                name: "skills"
+                widget: "list"
+                field: { label: "Skill", name: "skill", widget: "string" }
+              - label: "Contact"
+                name: "contact"
+                widget: "object"
+                fields:
+                  - { label: "Email", name: "email", widget: "string" }
+                  - { label: "LinkedIn", name: "linkedin", widget: "string" }
+                  - { label: "Instagram", name: "instagram", widget: "string" }
+                  - { label: "Behance", name: "behance", widget: "string" }
+
+          - label: "Projects"
+            name: "projects"
+            widget: "list"
+            fields:
+              - { label: "ID", name: "id", widget: "number", value_type: "int" }
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Category", name: "category", widget: "string" }
+              - { label: "Image", name: "image", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+              - label: "Tools"
+                name: "tools"
+                widget: "list"
+                field: { label: "Tool", name: "tool", widget: "string" }
+              - label: "Additional Info"
+                name: "additionalInfo"
+                widget: "list"
+                field: { label: "Info", name: "info", widget: "string" }
+              - label: "Gallery"
+                name: "gallery"
+                widget: "list"
+                field: { label: "Image URL", name: "image", widget: "string" }
+              - { label: "Year", name: "year", widget: "number", value_type: "int" }
