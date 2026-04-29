@@ -19,6 +19,18 @@ function resolveMediaValue(value) {
     return '';
 }
 
+function resolveProjectPreviewImage(project) {
+    if (!project) return '';
+    const cover = resolveMediaValue(project.image);
+    if (cover) return cover;
+    const gallery = Array.isArray(project.gallery) ? project.gallery : [];
+    for (const item of gallery) {
+        const resolved = resolveMediaValue(item);
+        if (resolved) return resolved;
+    }
+    return '';
+}
+
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -538,7 +550,9 @@ function initHeroProjectScrubber(projects) {
     const scrubber = document.getElementById('hero-project-scrubber');
     const trigger = document.getElementById('hero-project-trigger');
     const image = document.getElementById('hero-project-image');
-    if (!interactiveArea || !scrubber || !trigger || !image) return;
+    const fallback = document.getElementById('hero-project-fallback');
+    const fallbackText = document.getElementById('hero-project-fallback-text');
+    if (!interactiveArea || !scrubber || !trigger || !image || !fallback || !fallbackText) return;
     if (!Array.isArray(projects) || projects.length === 0) return;
 
     let currentIndex = 0;
@@ -555,8 +569,18 @@ function initHeroProjectScrubber(projects) {
         const project = projects[safeIndex];
         if (!project) return;
         currentIndex = safeIndex;
-        image.src = resolveMediaValue(project.image);
+        const previewImage = resolveProjectPreviewImage(project);
         image.alt = project.title;
+        if (previewImage) {
+            image.src = previewImage;
+            image.style.opacity = '0.3';
+            fallback.classList.add('hidden');
+        } else {
+            image.removeAttribute('src');
+            image.style.opacity = '0';
+            fallbackText.textContent = project.title || 'Preview Projects';
+            fallback.classList.remove('hidden');
+        }
     };
 
     const setActiveProject = (index, immediate = false) => {
@@ -564,7 +588,6 @@ function initHeroProjectScrubber(projects) {
         if (safeIndex === currentIndex && !isDissolving) return;
 
         if (immediate) {
-            image.style.opacity = '0.3';
             applyProjectImage(safeIndex);
             return;
         }
@@ -578,7 +601,6 @@ function initHeroProjectScrubber(projects) {
         image.style.opacity = '0';
         window.setTimeout(() => {
             applyProjectImage(safeIndex);
-            image.style.opacity = '0.3';
             isDissolving = false;
             if (queuedIndex !== null && queuedIndex !== currentIndex) {
                 const nextIndex = queuedIndex;

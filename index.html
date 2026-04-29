@@ -82,6 +82,15 @@
 
     <!-- Hero Section -->
     <section id="hero-interactive-area" class="relative min-h-screen bg-gray-50">
+        <div id="hero-project-scrubber" class="absolute inset-0">
+            <button id="hero-project-trigger" type="button" class="absolute inset-0 z-0 w-full h-full text-left cursor-ew-resize">
+                <img id="hero-project-image" src="" alt="Project preview" class="w-full h-full object-cover opacity-0 transition duration-200">
+                <div id="hero-project-fallback" class="absolute inset-0 bg-gray-100/80 flex items-center justify-center">
+                    <p id="hero-project-fallback-text" class="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase text-gray-500">Preview Projects</p>
+                </div>
+            </button>
+            <div class="absolute inset-0 bg-white/20"></div>
+        </div>
         <div class="relative z-10 max-w-7xl mx-auto px-6 pt-48 pb-20">
             <div class="max-w-4xl hero-fade-down">
                 <h1 class="text-6xl md:text-8xl font-bold font-display mb-10 leading-[0.9] tracking-tighter">
