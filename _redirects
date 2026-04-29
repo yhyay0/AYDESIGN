@@ -1,1 +1,2 @@
-/admin/* / 302 !Role=admin
+/admin/* /admin/index.html 200 Role=admin
+/admin/* / 302
