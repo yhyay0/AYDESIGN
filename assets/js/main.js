@@ -3,6 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const STORAGE_KEY = 'portfolioData';
+const isLocalPreview = () => {
+    const host = window.location.hostname;
+    return host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:';
+};
+
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -92,13 +97,16 @@ async function initApp() {
 }
 
 async function loadPortfolioData() {
-    const localData = localStorage.getItem(STORAGE_KEY);
-    if (localData) {
-        try {
-            return JSON.parse(localData);
-        } catch (parseError) {
-            console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
-            localStorage.removeItem(STORAGE_KEY);
+    // In production, always read from repository JSON so all deployed sites stay consistent.
+    if (isLocalPreview()) {
+        const localData = localStorage.getItem(STORAGE_KEY);
+        if (localData) {
+            try {
+                return JSON.parse(localData);
+            } catch (parseError) {
+                console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
+                localStorage.removeItem(STORAGE_KEY);
+            }
         }
     }
     try {

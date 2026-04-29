@@ -30,6 +30,7 @@
             }
         }
     </script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -43,6 +44,7 @@
                 <a href="#about" class="text-xs font-bold tracking-widest hover:opacity-50 transition">ABOUT US</a>
                 <a href="#contact" class="text-xs font-bold tracking-widest hover:opacity-50 transition">CONTACT US</a>
                 <button id="terms-toggle-button" type="button" class="text-xs font-bold tracking-widest hover:opacity-50 transition">TERMS OF USE</button>
+                <button data-netlify-identity-button type="button" class="text-xs font-bold tracking-widest hover:opacity-50 transition">LOGIN</button>
             </div>
             <button id="mobile-menu-toggle" type="button" class="mobile-menu-toggle md:hidden relative z-[95]" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu-panel">
                 <span class="mobile-menu-icon" aria-hidden="true">
@@ -170,5 +172,17 @@
     </div>
 
     <script src="assets/js/main.js"></script>
+    <script>
+        if (window.netlifyIdentity) {
+            window.netlifyIdentity.on('init', (user) => {
+                if (!user && window.location.hash.includes('invite_token')) {
+                    window.netlifyIdentity.open();
+                }
+            });
+            window.netlifyIdentity.on('login', () => {
+                document.location.href = '/admin/';
+            });
+        }
+    </script>
 </body>
 </html>
