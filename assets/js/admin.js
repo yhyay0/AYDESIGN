@@ -1,13 +1,24 @@
 // Global data storage
 let portfolioData = {};
 const STORAGE_KEY = 'portfolioData';
+const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
+function normalizeImageReference(value) {
+    if (!value || typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (/^(data:|blob:)/i.test(trimmed)) return trimmed;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('/assets/')) return `${REPO_CDN_BASE}${trimmed.slice(1)}`;
+    if (trimmed.startsWith('assets/')) return `${REPO_CDN_BASE}${trimmed}`;
+    return trimmed;
+}
 function resolveMediaValue(value) {
     if (!value) return '';
-    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'string') return normalizeImageReference(value);
     if (typeof value === 'object') {
         const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
         const url = typeof value.url === 'string' ? value.url.trim() : '';
-        return upload || url || '';
+        return normalizeImageReference(upload || url || '');
     }
     return '';
 }
@@ -258,6 +269,9 @@ function renderProjects() {
 
 // Update project data
 function updateProject(index, field, value) {
+    if (field === 'image' && typeof value === 'string') {
+        value = normalizeImageReference(value);
+    }
     portfolioData.projects[index][field] = value;
     updateJSONPreview();
 }
@@ -274,6 +288,9 @@ function addProjectListItem(index, field) {
 function updateProjectListItem(index, field, itemIndex, value) {
     if (!Array.isArray(portfolioData.projects[index][field])) {
         portfolioData.projects[index][field] = [];
+    }
+    if (field === 'gallery' && typeof value === 'string') {
+        value = normalizeImageReference(value);
     }
     portfolioData.projects[index][field][itemIndex] = value;
     updateJSONPreview();
@@ -313,6 +330,7 @@ function addProject() {
         alert('Please fill in title and category');
         return;
     }
+    newProject.image = normalizeImageReference(newProject.image);
 
     portfolioData.projects.push(newProject);
     document.getElementById('new-project-form').reset();
@@ -379,6 +397,7 @@ async function uploadNewProjectImage(file) {
     try {
         const dataUrl = await readAndCompressImage(file);
         document.getElementById('new-image').value = dataUrl;
+        alert('Local upload is saved as embedded data. For faster website loading, use an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }
@@ -390,6 +409,7 @@ async function uploadProjectImage(index, file) {
         portfolioData.projects[index].image = dataUrl;
         renderProjects();
         updateJSONPreview();
+        alert('Embedded image saved. For faster loading, replace with an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }
@@ -404,6 +424,7 @@ async function uploadProjectGalleryImage(index, itemIndex, file) {
         portfolioData.projects[index].gallery[itemIndex] = dataUrl;
         renderProjects();
         updateJSONPreview();
+        alert('Embedded gallery image saved. For faster loading, replace with an https image URL/CDN link.');
     } catch (error) {
         alert(error.message);
     }

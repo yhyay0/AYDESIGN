@@ -3,13 +3,24 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const STORAGE_KEY = 'portfolioData';
+const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
+function toFastImageUrl(value) {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (/^(data:|blob:)/i.test(trimmed)) return trimmed;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith('/assets/')) return `${REPO_CDN_BASE}${trimmed.slice(1)}`;
+    if (trimmed.startsWith('assets/')) return `${REPO_CDN_BASE}${trimmed}`;
+    return trimmed;
+}
 function resolveMediaValue(value) {
     if (!value) return '';
-    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'string') return toFastImageUrl(value);
     if (typeof value === 'object') {
         const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
         const url = typeof value.url === 'string' ? value.url.trim() : '';
-        return upload || url || '';
+        return toFastImageUrl(upload || url || '');
     }
     return '';
 }
@@ -350,7 +361,7 @@ function renderProjects(projects) {
         return `
             <div class="project-card group ${gridClass} animate-slide-up" style="animation-delay: ${index * 0.1}s" onclick="openModal(${project.id})">
                 <div class="relative overflow-hidden aspect-[16/10]">
-                    <img src="${project.image}" alt="${project.title}" class="w-full h-full object-cover">
+                    <img src="${project.image}" alt="${project.title}" loading="lazy" decoding="async" class="w-full h-full object-cover">
                     <div class="project-overlay">
                         <p class="text-[10px] font-bold tracking-widest uppercase mb-2 text-gray-400">${project.category}</p>
                         <h3 class="text-2xl font-bold font-display text-black mb-4">${project.title}</h3>
@@ -443,7 +454,7 @@ async function openModal(projectId, options = {}) {
                 <div class="space-y-6 md:space-y-10">
                     ${projectImages.map((img) => `
                         <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
-                            <img src="${img}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">
+                            <img src="${img}" alt="${project.title}" loading="lazy" decoding="async" class="project-detail-image w-full h-auto object-contain">
                         </div>
                     `).join('')}
                 </div>
@@ -552,12 +563,13 @@ function initHeroProjectScrubber(projects) {
     if (!Array.isArray(projects) || projects.length === 0) return;
 
     let currentIndex = 0;
-    let lastX = null;
-    let movementCarry = 0;
     let isDissolving = false;
     let queuedIndex = null;
+    let lastStepAt = 0;
     const total = projects.length;
-    const STEP_THRESHOLD_PX = 24;
+    const LEFT_ZONE_RATIO = 0.42;
+    const RIGHT_ZONE_RATIO = 0.58;
+    const STEP_COOLDOWN_MS = 220;
 
     image.style.transition = 'opacity 150ms ease';
 
@@ -600,34 +612,25 @@ function initHeroProjectScrubber(projects) {
         }, 150);
     };
 
-    interactiveArea.addEventListener('mouseenter', () => {
-        lastX = null;
-        movementCarry = 0;
-    });
-
-    interactiveArea.addEventListener('mouseleave', () => {
-        lastX = null;
-        movementCarry = 0;
-    });
-
     interactiveArea.addEventListener('mousemove', (event) => {
         const rect = interactiveArea.getBoundingClientRect();
         if (rect.width <= 0) return;
-        const currentX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-        if (lastX === null) {
-            lastX = currentX;
-            return;
-        }
-        const deltaX = currentX - lastX;
-        lastX = currentX;
-        movementCarry += deltaX;
-        if (Math.abs(movementCarry) < STEP_THRESHOLD_PX) return;
         if (isDissolving) return;
 
-        const direction = movementCarry > 0 ? 1 : -1;
+        const now = Date.now();
+        if (now - lastStepAt < STEP_COOLDOWN_MS) return;
+
+        const currentX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        const ratio = currentX / rect.width;
+
+        let direction = 0;
+        if (ratio <= LEFT_ZONE_RATIO) direction = -1;
+        if (ratio >= RIGHT_ZONE_RATIO) direction = 1;
+        if (direction === 0) return;
+
         const nextIndex = Math.max(0, Math.min(total - 1, currentIndex + direction));
-        movementCarry -= direction * STEP_THRESHOLD_PX;
         if (nextIndex !== currentIndex) {
+            lastStepAt = now;
             setActiveProject(nextIndex, false);
         }
     });
