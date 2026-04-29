@@ -1,32 +1,6 @@
 // Global data storage
 let portfolioData = {};
 const STORAGE_KEY = 'portfolioData';
-function resolveMediaValue(value) {
-    if (!value) return '';
-    if (typeof value === 'string') return value.trim();
-    if (typeof value === 'object') {
-        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
-        const url = typeof value.url === 'string' ? value.url.trim() : '';
-        return upload || url || '';
-    }
-    return '';
-}
-
-function normalizePortfolioDataShape() {
-    portfolioData.profile = portfolioData.profile || {};
-    portfolioData.profile.contact = portfolioData.profile.contact || {};
-    portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
-
-    portfolioData.projects = portfolioData.projects.map((project) => {
-        const nextProject = { ...project };
-        nextProject.image = resolveMediaValue(nextProject.image);
-        nextProject.gallery = Array.isArray(nextProject.gallery)
-            ? nextProject.gallery.map(resolveMediaValue).filter(Boolean)
-            : [];
-        return nextProject;
-    });
-}
-
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -132,7 +106,9 @@ async function loadPortfolioData() {
             persistPortfolioData();
         }
 
-        normalizePortfolioDataShape();
+        portfolioData.profile = portfolioData.profile || {};
+        portfolioData.profile.contact = portfolioData.profile.contact || {};
+        portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
         populateProfileForm();
         renderProjects();
         updateJSONPreview();
