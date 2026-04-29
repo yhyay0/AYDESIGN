@@ -1,6 +1,5 @@
 backend:
-  name: github
-  repo: yhyay0/AYDESIGN
+  name: git-gateway
   branch: main
 
 media_folder: "assets/uploads"
