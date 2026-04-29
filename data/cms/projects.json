@@ -1,0 +1,94 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "Luna Coffee Rebrand",
+      "category": "Branding Design",
+      "image": {
+        "kind": "image",
+        "url": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1400&q=80"
+      },
+      "description": "A full brand refresh for a boutique coffee chain focused on modern packaging, tone of voice, and in-store visual language.",
+      "tools": [
+        "Illustrator",
+        "Photoshop",
+        "Figma"
+      ],
+      "additionalInfo": [
+        "Developed a modular logo and icon suite for cups, signage, and social assets.",
+        "Created a visual system balancing premium aesthetics with everyday approachability."
+      ],
+      "gallery": [
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1400&q=80"
+        },
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1517705008128-361805f42e86?auto=format&fit=crop&w=1400&q=80"
+        }
+      ],
+      "year": 2024
+    },
+    {
+      "id": 2,
+      "title": "FinFlow Mobile App",
+      "category": "UI/UX Design",
+      "image": {
+        "kind": "image",
+        "url": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1400&q=80"
+      },
+      "description": "Designed an end-to-end personal finance mobile experience with clear information hierarchy and goal-based onboarding.",
+      "tools": [
+        "Figma",
+        "FigJam",
+        "Principle"
+      ],
+      "additionalInfo": [
+        "Reduced onboarding drop-off by simplifying the first-time flow into three guided steps.",
+        "Built reusable card, chart, and form patterns to speed product team delivery."
+      ],
+      "gallery": [
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1400&q=80"
+        },
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1556740714-a8395b3bf30f?auto=format&fit=crop&w=1400&q=80"
+        }
+      ],
+      "year": 2025
+    },
+    {
+      "id": 3,
+      "title": "Aether Studio Website",
+      "category": "Web Experience",
+      "image": {
+        "kind": "image",
+        "url": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1400&q=80"
+      },
+      "description": "A responsive portfolio website for a creative studio, emphasizing motion, readability, and project-first storytelling.",
+      "tools": [
+        "Figma",
+        "Webflow",
+        "After Effects"
+      ],
+      "additionalInfo": [
+        "Defined page rhythm and transitions to keep focus on featured projects.",
+        "Optimized layout and media strategy for faster loading on mobile devices."
+      ],
+      "gallery": [
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1481487196290-c152efe083f5?auto=format&fit=crop&w=1400&q=80"
+        },
+        {
+          "kind": "image",
+          "url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1400&q=80"
+        }
+      ],
+      "year": 2026
+    }
+  ]
+}

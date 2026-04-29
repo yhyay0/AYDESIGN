@@ -6,40 +6,43 @@ media_folder: "assets/uploads"
 public_folder: "/assets/uploads"
 
 collections:
-  - name: "site"
-    label: "Site Content"
+  - name: "profile"
+    label: "Profile & Contact"
     files:
-      - file: "data/portfolio.json"
-        label: "Portfolio Data"
-        name: "portfolio"
-        description: "Edit your profile and projects. For each image field, you can either upload a local file or paste an external image URL."
+      - file: "data/cms/profile.json"
+        label: "Profile Information"
+        name: "profile_info"
+        description: "Edit hero text, bio, terms, skills, and contact details."
         fields:
-          - label: "Profile"
-            name: "profile"
+          - { label: "Role", name: "role", widget: "string", hint: "Main hero title on homepage." }
+          - { label: "Subtitle", name: "subtitle", widget: "text", hint: "Short sentence below hero title." }
+          - { label: "Bio", name: "bio", widget: "text", hint: "About section text." }
+          - { label: "Terms of Use", name: "termsOfUse", widget: "text", hint: "Shown in the Terms modal." }
+          - label: "Skills"
+            name: "skills"
+            widget: "list"
+            summary: "{{fields.skill}}"
+            field: { label: "Skill", name: "skill", widget: "string" }
+          - label: "Contact"
+            name: "contact"
             widget: "object"
             collapsed: false
             fields:
-              - { label: "Role", name: "role", widget: "string", hint: "Main hero title on homepage." }
-              - { label: "Subtitle", name: "subtitle", widget: "text", hint: "Short sentence below hero title." }
-              - { label: "Bio", name: "bio", widget: "text", hint: "About section text." }
-              - { label: "Terms of Use", name: "termsOfUse", widget: "text", hint: "Shown in the Terms modal." }
-              - label: "Skills"
-                name: "skills"
-                widget: "list"
-                summary: "{{fields.skill}}"
-                field: { label: "Skill", name: "skill", widget: "string" }
-              - label: "Contact"
-                name: "contact"
-                widget: "object"
-                collapsed: true
-                fields:
-                  - { label: "Email", name: "email", widget: "string" }
-                  - { label: "LinkedIn", name: "linkedin", widget: "string" }
-                  - { label: "Instagram", name: "instagram", widget: "string" }
-                  - { label: "Behance", name: "behance", widget: "string" }
+              - { label: "Email", name: "email", widget: "string" }
+              - { label: "LinkedIn", name: "linkedin", widget: "string" }
+              - { label: "Instagram", name: "instagram", widget: "string" }
+              - { label: "Behance", name: "behance", widget: "string" }
 
+  - name: "projects"
+    label: "Projects"
+    files:
+      - file: "data/cms/projects.json"
+        label: "Projects List"
+        name: "projects_list"
+        description: "Add/edit projects. For each media field, upload local file or use external URL."
+        fields:
           - label: "Projects"
-            name: "projects"
+            name: "items"
             widget: "list"
             summary: "{{fields.title}} - {{fields.category}} ({{fields.year}})"
             fields:
