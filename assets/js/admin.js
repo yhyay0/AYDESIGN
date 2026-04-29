@@ -281,7 +281,11 @@ function renderProjects() {
         <div class="bg-white rounded-lg p-8 border border-gray-200">
             <div class="flex justify-between items-start mb-6">
                 <h3 class="text-xl font-bold">${project.title}</h3>
-                <button onclick="deleteProject(${index})" class="text-red-600 hover:text-red-800 font-semibold text-sm">Delete</button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="moveProject(${index}, -1)" class="text-xs px-3 py-1 border border-gray-300 rounded hover:border-black transition" ${index === 0 ? 'disabled' : ''}>Move Up</button>
+                    <button type="button" onclick="moveProject(${index}, 1)" class="text-xs px-3 py-1 border border-gray-300 rounded hover:border-black transition" ${index === portfolioData.projects.length - 1 ? 'disabled' : ''}>Move Down</button>
+                    <button onclick="deleteProject(${index})" class="text-red-600 hover:text-red-800 font-semibold text-sm">Delete</button>
+                </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
@@ -410,6 +414,14 @@ function deleteProject(index) {
         renderProjects();
         updateJSONPreview();
     }
+}
+
+function moveProject(index, direction) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= portfolioData.projects.length) return;
+    [portfolioData.projects[index], portfolioData.projects[targetIndex]] = [portfolioData.projects[targetIndex], portfolioData.projects[index]];
+    renderProjects();
+    updateJSONPreview();
 }
 
 // Add new project
