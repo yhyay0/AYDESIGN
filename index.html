@@ -30,7 +30,6 @@
             }
         }
     </script>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
@@ -82,13 +81,7 @@
     </section>
 
     <!-- Hero Section -->
-    <section id="hero-interactive-area" class="relative min-h-screen">
-        <div id="hero-project-scrubber" class="absolute inset-0">
-            <button id="hero-project-trigger" type="button" class="absolute inset-0 z-0 w-full h-full text-left cursor-ew-resize">
-                <img id="hero-project-image" src="assets/img/projects/page-02.png" alt="Project preview" class="w-full h-full object-cover opacity-30 transition duration-200">
-            </button>
-            <div class="absolute inset-0 bg-white/20"></div>
-        </div>
+    <section id="hero-interactive-area" class="relative min-h-screen bg-gray-50">
         <div class="relative z-10 max-w-7xl mx-auto px-6 pt-48 pb-20">
             <div class="max-w-4xl hero-fade-down">
                 <h1 class="text-6xl md:text-8xl font-bold font-display mb-10 leading-[0.9] tracking-tighter">
@@ -171,17 +164,5 @@
     </div>
 
     <script src="assets/js/main.js"></script>
-    <script>
-        if (window.netlifyIdentity) {
-            window.netlifyIdentity.on('init', (user) => {
-                if (!user && window.location.hash.includes('invite_token')) {
-                    window.netlifyIdentity.open();
-                }
-            });
-            window.netlifyIdentity.on('login', () => {
-                document.location.href = '/admin/';
-            });
-        }
-    </script>
 </body>
 </html>

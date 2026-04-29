@@ -310,11 +310,20 @@ function renderProjects(projects) {
     const grid = document.getElementById('portfolio-grid');
     grid.innerHTML = projects.map((project, index) => {
         const gridClass = 'md:col-span-1';
+        const projectImage = (project.image || '').trim();
         
         return `
             <div class="project-card group ${gridClass} animate-slide-up" style="animation-delay: ${index * 0.1}s" onclick="openModal(${project.id})">
                 <div class="relative overflow-hidden aspect-[16/10]">
-                    <img src="${project.image}" alt="${project.title}" class="w-full h-full object-cover">
+                    ${projectImage
+                        ? `<img src="${projectImage}" alt="${project.title}" class="w-full h-full object-cover">`
+                        : `<div class="w-full h-full bg-gray-100 flex items-center justify-center text-center px-6">
+                            <div>
+                                <p class="text-[10px] font-bold tracking-widest uppercase mb-3 text-gray-400">${project.category}</p>
+                                <h3 class="text-xl font-bold font-display text-black">${project.title}</h3>
+                            </div>
+                        </div>`
+                    }
                     <div class="project-overlay">
                         <p class="text-[10px] font-bold tracking-widest uppercase mb-2 text-gray-400">${project.category}</p>
                         <h3 class="text-2xl font-bold font-display text-black mb-4">${project.title}</h3>
@@ -405,11 +414,16 @@ async function openModal(projectId, options = {}) {
                 </div>
 
                 <div class="space-y-6 md:space-y-10">
-                    ${projectImages.map((img) => `
-                        <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
-                            <img src="${img}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">
-                        </div>
-                    `).join('')}
+                    ${projectImages.length > 0
+                        ? projectImages.map((img) => `
+                            <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
+                                <img src="${img}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">
+                            </div>
+                        `).join('')
+                        : `<div class="w-full bg-gray-50 border border-black/5 px-6 py-12 text-center text-sm text-gray-500">
+                            Visual assets for this project are currently hidden.
+                        </div>`
+                    }
                 </div>
 
                 <div class="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-black/5 flex justify-between items-center">
