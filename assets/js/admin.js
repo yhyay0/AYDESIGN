@@ -439,8 +439,8 @@ function addProject() {
     alert('Project added successfully!');
 }
 
-const IMAGE_MAX_DIMENSION = 1280;
-const IMAGE_OUTPUT_QUALITY = 0.76;
+const IMAGE_MAX_DIMENSION = 960;
+const IMAGE_OUTPUT_QUALITY = 0.68;
 
 function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
