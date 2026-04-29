@@ -19,6 +19,18 @@ function resolveMediaValue(value) {
     return '';
 }
 
+function normalizeMediaSrc(raw = '') {
+    const src = String(raw).trim();
+    if (!src) return '';
+    if (/^https?:\/\//i.test(src) || src.startsWith('data:') || src.startsWith('blob:')) {
+        return src;
+    }
+    // Normalize local paths from CMS uploads: assets/..., /assets/..., ./assets/...
+    const noDotSlash = src.replace(/^\.\//, '');
+    const noLeadingSlash = noDotSlash.replace(/^\/+/, '');
+    return `/${encodeURI(noLeadingSlash)}`;
+}
+
 function inferMediaKind(src = '') {
     const clean = src.toLowerCase().split('?')[0].split('#')[0];
     if (/\.(mp4|webm|ogg|mov|m4v)$/.test(clean)) return 'video';
@@ -28,14 +40,14 @@ function inferMediaKind(src = '') {
 function resolveMediaItem(value) {
     if (!value) return null;
     if (typeof value === 'string') {
-        const src = value.trim();
+        const src = normalizeMediaSrc(value);
         if (!src) return null;
         return { src, kind: inferMediaKind(src) };
     }
     if (typeof value === 'object') {
         const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
         const url = typeof value.url === 'string' ? value.url.trim() : '';
-        const src = upload || url;
+        const src = normalizeMediaSrc(upload || url);
         if (!src) return null;
         const kind = value.kind === 'video' || value.kind === 'image' ? value.kind : inferMediaKind(src);
         return { src, kind };
@@ -155,6 +167,22 @@ async function loadPortfolioData() {
                 localStorage.removeItem(STORAGE_KEY);
             }
         }
+    }
+    try {
+        const [profileResponse, projectsResponse] = await Promise.all([
+            fetch(`data/cms/profile.json?t=${Date.now()}`),
+            fetch(`data/cms/projects.json?t=${Date.now()}`)
+        ]);
+        if (profileResponse.ok && projectsResponse.ok) {
+            const profile = await profileResponse.json();
+            const projectsPayload = await projectsResponse.json();
+            return {
+                profile,
+                projects: Array.isArray(projectsPayload.items) ? projectsPayload.items : []
+            };
+        }
+    } catch (cmsFetchError) {
+        console.warn('Split CMS files not available, fallback to portfolio.json.', cmsFetchError);
     }
     try {
         const response = await fetch(`data/portfolio.json?t=${Date.now()}`);
@@ -357,7 +385,8 @@ function renderProjects(projects) {
     const grid = document.getElementById('portfolio-grid');
     grid.innerHTML = projects.map((project, index) => {
         const gridClass = 'md:col-span-1';
-        const projectImage = resolveMediaValue(project.image);
+        const coverMedia = resolveMediaItem(project.image);
+        const projectImage = coverMedia && coverMedia.kind === 'image' ? coverMedia.src : '';
         
         return `
             <div class="project-card group ${gridClass} animate-slide-up" style="animation-delay: ${index * 0.1}s" onclick="openModal(${project.id})">
@@ -466,7 +495,7 @@ async function openModal(projectId, options = {}) {
                         ? projectMediaItems.map((media) => `
                             <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
                                 ${media.kind === 'video'
-                                    ? `<video src="${media.src}" controls playsinline class="project-detail-image w-full h-auto object-contain bg-black"></video>`
+                                    ? `<video src="${media.src}" autoplay muted loop playsinline class="project-detail-image w-full h-auto object-contain bg-black"></video>`
                                     : `<img src="${media.src}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">`
                                 }
                             </div>
