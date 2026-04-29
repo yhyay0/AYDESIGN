@@ -1,0 +1,93 @@
+{
+  "profile": {
+    "name": "cskabclajcl",
+    "role": "kjxbdqksajdb",
+    "bio": "ubvcedsoubcoabcalbdcjalclskcdancc",
+    "skills": [
+      "Visual Communication",
+      "Branding Design",
+      "Information Design",
+      "Product & Packaging Design",
+      "UI/UX Design",
+      "Illustration"
+    ],
+    "contact": {
+      "email": "hello@example.com",
+      "linkedin": "linkedin.com/in/anthony",
+      "instagram": "instagram.com/anthony"
+    },
+    "subtitle": "cakjbsljcbla"
+  },
+  "projects": [
+    {
+      "id": 1,
+      "title": "Life of a Creator: Daisukerichard",
+      "category": "Book Design",
+      "image": "assets/img/projects/page-02.png",
+      "description": "A book design project about the creative processes of famous Japanese illustrator Daisukerichard. The design features a dynamic Chinese vertical typographic system with a playful rounded typeface, reflecting the illustrator's cheerful image and providing a fun reading experience.",
+      "tools": [
+        "Typography",
+        "Layout Design",
+        "Book Binding"
+      ],
+      "size": "large",
+      "year": "2024"
+    },
+    {
+      "id": 2,
+      "title": "CityBus Stop Signage Redesign",
+      "category": "Information Design",
+      "image": "assets/img/projects/page-04.png",
+      "description": "A user-centered redesign of Citybus stop signs in Hong Kong. The project addresses issues like misused colors, small fonts, and inconsistent color schemes to improve orientation and readability for all users, including the elderly and visually impaired.",
+      "tools": [
+        "Information Design",
+        "User Research",
+        "Wayfinding"
+      ],
+      "size": "small",
+      "year": "2025"
+    },
+    {
+      "id": 3,
+      "title": "SHIFTcube Sustainable Packaging",
+      "category": "Product & Packaging Design",
+      "image": "assets/img/projects/page-06.png",
+      "description": "An innovative solution for traditional over-packaging of fuel tablets. SHIFTcube features a cube-shaped fuel tablet encased in a paper-based package that can be safely burned together, reducing waste and promoting responsible outdoor practices.",
+      "tools": [
+        "Packaging Design",
+        "Sustainability",
+        "Product Design"
+      ],
+      "size": "small",
+      "year": "2024"
+    },
+    {
+      "id": 4,
+      "title": "HKEMSC Branding Plan",
+      "category": "Branding Design",
+      "image": "assets/img/projects/page-08.png",
+      "description": "A comprehensive branding identity for the Hong Kong Emergency Medical Services Corps. The concept combines the professionalism of a non-governmental organization with the stylish appeal of a fashion brand to increase awareness and engagement.",
+      "tools": [
+        "Branding",
+        "Logo Design",
+        "Visual Identity"
+      ],
+      "size": "large",
+      "year": "2023"
+    },
+    {
+      "id": 5,
+      "title": "LETS GO TEA Digital Transformation",
+      "category": "Branding & UI/UX",
+      "image": "assets/img/projects/page-10.png",
+      "description": "Revitalizing local herbal tea shops through modern branding and digital transformation. The project includes a fresh visual identity and a mobile app for online ordering, blending traditional values with contemporary aesthetics.",
+      "tools": [
+        "UI/UX Design",
+        "App Design",
+        "Branding"
+      ],
+      "size": "small",
+      "year": "2024"
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        light: '#ffffff',
+                        dark: '#000000',
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <header class="bg-white border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-6 py-8">
+                <h1 class="text-3xl font-bold">Portfolio Admin Dashboard</h1>
+                <p class="text-gray-600 mt-2">Manage your portfolio projects and profile information</p>
+                <a href="index.html" class="inline-block mt-4 text-sm font-semibold hover:underline">Back to Site</a>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-6 py-12">
+            <div class="flex gap-4 mb-8 border-b border-gray-200">
+                <button type="button" onclick="switchTab('profile')" id="tab-profile" data-tab-button class="px-4 py-3 border-b-2 border-black font-semibold text-sm text-black">Profile</button>
+                <button type="button" onclick="switchTab('projects')" id="tab-projects" data-tab-button class="px-4 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-600 hover:text-black">Projects</button>
+                <button type="button" onclick="switchTab('terms')" id="tab-terms" data-tab-button class="px-4 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-600 hover:text-black">Terms</button>
+                <button type="button" onclick="switchTab('export')" id="tab-export" data-tab-button class="px-4 py-3 border-b-2 border-transparent font-semibold text-sm text-gray-600 hover:text-black">Export/Import</button>
+            </div>
+
+            <div id="profile-tab" class="tab-content">
+                <div class="bg-white rounded-lg p-8 border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-8">Profile Information</h2>
+                    <form id="profile-form" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Title</label>
+                            <input type="text" id="profile-role" placeholder="Your Title" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Subtitle</label>
+                            <textarea id="profile-subtitle" placeholder="Your subtitle" rows="3" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Bio</label>
+                            <textarea id="profile-bio" placeholder="Your biography" rows="5" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-2">Skills (comma-separated)</label>
+                            <input type="text" id="profile-skills" placeholder="Skill 1, Skill 2, Skill 3" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Email</label>
+                                <input type="email" id="profile-email" placeholder="your@email.com" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">LinkedIn</label>
+                                <input type="text" id="profile-linkedin" placeholder="linkedin.com/in/yourname" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Instagram</label>
+                                <input type="text" id="profile-instagram" placeholder="instagram.com/yourname" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">BEHANCE</label>
+                                <input type="text" id="profile-behance" placeholder="behance.net/yourname" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                        </div>
+                        <button type="button" onclick="saveProfile()" class="bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Save Profile</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="projects-tab" class="tab-content hidden">
+                <div class="space-y-8">
+                    <div id="projects-list" class="space-y-6"></div>
+
+                    <div class="bg-white rounded-lg p-8 border border-gray-200">
+                        <h3 class="text-2xl font-bold mb-8">Add New Project</h3>
+                        <form id="new-project-form" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-semibold mb-2">Project Title</label>
+                                    <input type="text" id="new-title" placeholder="Project Title" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-2">Category</label>
+                                    <input type="text" id="new-category" placeholder="e.g., Branding Design" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Year</label>
+                                <input type="number" id="new-year" placeholder="2024" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Description</label>
+                                <textarea id="new-description" placeholder="Project description" rows="4" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Image URL</label>
+                                <input type="text" id="new-image" placeholder="https://example.com/image.jpg or assets/img/projects/page-XX.png" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                                <label class="block text-xs text-gray-500 mt-2 mb-1">Or upload local image</label>
+                                <input type="file" id="new-image-file" accept="image/*" onchange="uploadNewProjectImage(this.files[0])" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-2">Hashtag(s) (comma-separated)</label>
+                                <input type="text" id="new-tools" placeholder="Tool 1, Tool 2, Tool 3" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
+                            </div>
+                            <button type="button" onclick="addProject()" class="bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Add Project</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div id="terms-tab" class="tab-content hidden">
+                <div class="bg-white rounded-lg p-8 border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-8">Terms of Use</h2>
+                    <div class="space-y-4">
+                        <label class="block text-sm font-semibold">Terms Content</label>
+                        <textarea id="profile-terms" placeholder="Enter terms of use content..." rows="12" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black"></textarea>
+                        <button type="button" onclick="saveProfile()" class="bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Save Terms</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="export-tab" class="tab-content hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-lg p-8 border border-gray-200">
+                        <h3 class="text-2xl font-bold mb-4">Export JSON</h3>
+                        <p class="text-gray-600 mb-6">Download your portfolio data as JSON file</p>
+                        <button onclick="exportJSON()" class="w-full bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Download JSON</button>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-8 border border-gray-200">
+                        <h3 class="text-2xl font-bold mb-4">Import JSON</h3>
+                        <p class="text-gray-600 mb-6">Upload a JSON file to restore your portfolio data</p>
+                        <input type="file" id="import-file" accept=".json" class="w-full mb-4 border border-gray-300 rounded px-4 py-2">
+                        <button onclick="importJSON()" class="w-full bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Import JSON</button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg p-8 border border-gray-200 mt-8">
+                    <h3 class="text-2xl font-bold mb-4">Current JSON Data</h3>
+                    <textarea id="json-preview" readonly rows="15" class="w-full border border-gray-300 rounded px-4 py-2 font-mono text-sm bg-gray-50"></textarea>
+                    <div class="mt-4 flex flex-wrap gap-3">
+                        <button onclick="copyJSON()" class="bg-black text-white px-8 py-3 font-semibold rounded hover:bg-gray-800 transition">Copy to Clipboard</button>
+                        <button onclick="clearLocalData()" class="bg-white text-black px-8 py-3 font-semibold rounded border border-gray-300 hover:border-black transition">Clear Local Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>
