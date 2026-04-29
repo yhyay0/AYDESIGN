@@ -612,12 +612,9 @@ function initHeroProjectScrubber(projects) {
     if (!Array.isArray(projects) || projects.length === 0) return;
 
     let currentIndex = 0;
-    let lastX = null;
-    let movementCarry = 0;
     let isDissolving = false;
     let queuedIndex = null;
     const total = projects.length;
-    const STEP_THRESHOLD_PX = 24;
 
     image.style.transition = 'opacity 150ms ease';
 
@@ -668,36 +665,13 @@ function initHeroProjectScrubber(projects) {
         }, 150);
     };
 
-    interactiveArea.addEventListener('mouseenter', () => {
-        lastX = null;
-        movementCarry = 0;
-    });
-
-    interactiveArea.addEventListener('mouseleave', () => {
-        lastX = null;
-        movementCarry = 0;
-    });
-
     interactiveArea.addEventListener('mousemove', (event) => {
         const rect = interactiveArea.getBoundingClientRect();
         if (rect.width <= 0) return;
         const currentX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-        if (lastX === null) {
-            lastX = currentX;
-            return;
-        }
-        const deltaX = currentX - lastX;
-        lastX = currentX;
-        movementCarry += deltaX;
-        if (Math.abs(movementCarry) < STEP_THRESHOLD_PX) return;
-        if (isDissolving) return;
-
-        const direction = movementCarry > 0 ? 1 : -1;
-        const nextIndex = Math.max(0, Math.min(total - 1, currentIndex + direction));
-        movementCarry -= direction * STEP_THRESHOLD_PX;
-        if (nextIndex !== currentIndex) {
-            setActiveProject(nextIndex, false);
-        }
+        const ratio = rect.width <= 1 ? 0 : currentX / (rect.width - 1);
+        const nextIndex = Math.max(0, Math.min(total - 1, Math.round(ratio * (total - 1))));
+        if (nextIndex !== currentIndex) setActiveProject(nextIndex, false);
     });
 
     trigger.addEventListener('click', () => {
