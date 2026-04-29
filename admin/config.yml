@@ -67,8 +67,15 @@ collections:
               - label: "Gallery"
                 name: "gallery"
                 widget: "list"
-                summary: "{{fields.url}}"
+                summary: "{{fields.kind}} - {{fields.url}}"
                 fields:
-                  - { label: "Upload Local File", name: "upload", widget: "image", required: false }
-                  - { label: "Or External Image URL", name: "url", widget: "string", required: false, hint: "Paste full https:// image URL." }
+                  - label: "Media Type"
+                    name: "kind"
+                    widget: "select"
+                    default: "image"
+                    options:
+                      - { label: "Image", value: "image" }
+                      - { label: "Video", value: "video" }
+                  - { label: "Upload Local File (Image or Video)", name: "upload", widget: "file", required: false, hint: "You can add multiple media entries per project." }
+                  - { label: "Or External Media URL", name: "url", widget: "string", required: false, hint: "Paste full https:// URL for image or video." }
               - { label: "Year", name: "year", widget: "number", value_type: "int" }

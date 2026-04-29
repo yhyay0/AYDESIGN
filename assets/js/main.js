@@ -19,14 +19,38 @@ function resolveMediaValue(value) {
     return '';
 }
 
+function inferMediaKind(src = '') {
+    const clean = src.toLowerCase().split('?')[0].split('#')[0];
+    if (/\.(mp4|webm|ogg|mov|m4v)$/.test(clean)) return 'video';
+    return 'image';
+}
+
+function resolveMediaItem(value) {
+    if (!value) return null;
+    if (typeof value === 'string') {
+        const src = value.trim();
+        if (!src) return null;
+        return { src, kind: inferMediaKind(src) };
+    }
+    if (typeof value === 'object') {
+        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
+        const url = typeof value.url === 'string' ? value.url.trim() : '';
+        const src = upload || url;
+        if (!src) return null;
+        const kind = value.kind === 'video' || value.kind === 'image' ? value.kind : inferMediaKind(src);
+        return { src, kind };
+    }
+    return null;
+}
+
 function resolveProjectPreviewImage(project) {
     if (!project) return '';
-    const cover = resolveMediaValue(project.image);
-    if (cover) return cover;
+    const coverItem = resolveMediaItem(project.image);
+    if (coverItem && coverItem.kind === 'image') return coverItem.src;
     const gallery = Array.isArray(project.gallery) ? project.gallery : [];
     for (const item of gallery) {
-        const resolved = resolveMediaValue(item);
-        if (resolved) return resolved;
+        const resolved = resolveMediaItem(item);
+        if (resolved && resolved.kind === 'image') return resolved.src;
     }
     return '';
 }
@@ -410,8 +434,8 @@ async function openModal(projectId, options = {}) {
     const animateIn = options.animateIn !== false;
 
     const additionalInfo = (project.additionalInfo || []).filter(item => item && item.trim());
-    const projectImages = [resolveMediaValue(project.image), ...((project.gallery || []).map(resolveMediaValue))]
-        .filter((img) => img && img.trim());
+    const projectMediaItems = [resolveMediaItem(project.image), ...((project.gallery || []).map(resolveMediaItem))]
+        .filter(Boolean);
 
     content.innerHTML = `
         <div id="modal-content-inner" class="opacity-100 translate-y-0 transition-all duration-300">
@@ -438,10 +462,13 @@ async function openModal(projectId, options = {}) {
                 </div>
 
                 <div class="space-y-6 md:space-y-10">
-                    ${projectImages.length > 0
-                        ? projectImages.map((img) => `
+                    ${projectMediaItems.length > 0
+                        ? projectMediaItems.map((media) => `
                             <div class="project-image-zoom-wrap w-full bg-gray-50 border border-black/5">
-                                <img src="${img}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">
+                                ${media.kind === 'video'
+                                    ? `<video src="${media.src}" controls playsinline class="project-detail-image w-full h-auto object-contain bg-black"></video>`
+                                    : `<img src="${media.src}" alt="${project.title}" class="project-detail-image w-full h-auto object-contain">`
+                                }
                             </div>
                         `).join('')
                         : `<div class="w-full bg-gray-50 border border-black/5 px-6 py-12 text-center text-sm text-gray-500">
