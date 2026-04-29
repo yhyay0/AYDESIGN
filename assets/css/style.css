@@ -258,14 +258,68 @@ html {
 
 /* Responsive Typography */
 @media (max-width: 768px) {
-    h1 { font-size: 2.5rem; }
-    h2 { font-size: 2rem; }
-    .mobile-menu-panel {
-        width: 100vw;
-        background: rgba(255, 255, 255, 0.92);
+    nav .max-w-7xl {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
     }
-    .mobile-menu-sheet {
-        align-items: center;
-        text-align: center;
+
+    #hero-interactive-area {
+        min-height: 100svh;
+    }
+
+    #hero-interactive-area .max-w-7xl {
+        padding-top: 7.5rem;
+        padding-bottom: 3.5rem;
+    }
+
+    h1 {
+        font-size: clamp(2.1rem, 8.2vw, 3.15rem);
+        line-height: 0.95;
+    }
+
+    h2 {
+        font-size: clamp(1.9rem, 7vw, 2.5rem);
+        line-height: 1.03;
+    }
+
+    #hero-subtitle {
+        font-size: clamp(1rem, 4vw, 1.2rem);
+        max-width: 92%;
+    }
+
+    #work,
+    #about,
+    #contact {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    #work {
+        padding-top: 3.5rem;
+        padding-bottom: 3.5rem;
+    }
+
+    #contact {
+        padding-top: 4.5rem;
+        padding-bottom: 4.5rem;
+    }
+
+    #about-bio {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .mobile-menu-panel {
+        width: min(78vw, 360px);
+    }
+}
+
+@media (max-width: 420px) {
+    .mobile-menu-panel {
+        width: 84vw;
+    }
+
+    #hero-interactive-area .max-w-7xl {
+        padding-top: 7rem;
     }
 }
