@@ -12,22 +12,26 @@ collections:
       - file: "data/portfolio.json"
         label: "Portfolio Data"
         name: "portfolio"
+        description: "Edit your profile and projects. For each image field, you can either upload a local file or paste an external image URL."
         fields:
           - label: "Profile"
             name: "profile"
             widget: "object"
+            collapsed: false
             fields:
-              - { label: "Role", name: "role", widget: "string" }
-              - { label: "Subtitle", name: "subtitle", widget: "text" }
-              - { label: "Bio", name: "bio", widget: "text" }
-              - { label: "Terms of Use", name: "termsOfUse", widget: "text" }
+              - { label: "Role", name: "role", widget: "string", hint: "Main hero title on homepage." }
+              - { label: "Subtitle", name: "subtitle", widget: "text", hint: "Short sentence below hero title." }
+              - { label: "Bio", name: "bio", widget: "text", hint: "About section text." }
+              - { label: "Terms of Use", name: "termsOfUse", widget: "text", hint: "Shown in the Terms modal." }
               - label: "Skills"
                 name: "skills"
                 widget: "list"
+                summary: "{{fields.skill}}"
                 field: { label: "Skill", name: "skill", widget: "string" }
               - label: "Contact"
                 name: "contact"
                 widget: "object"
+                collapsed: true
                 fields:
                   - { label: "Email", name: "email", widget: "string" }
                   - { label: "LinkedIn", name: "linkedin", widget: "string" }
@@ -37,22 +41,34 @@ collections:
           - label: "Projects"
             name: "projects"
             widget: "list"
+            summary: "{{fields.title}} - {{fields.category}} ({{fields.year}})"
             fields:
               - { label: "ID", name: "id", widget: "number", value_type: "int" }
               - { label: "Title", name: "title", widget: "string" }
               - { label: "Category", name: "category", widget: "string" }
-              - { label: "Image", name: "image", widget: "string" }
+              - label: "Cover Image"
+                name: "image"
+                widget: "object"
+                collapsed: true
+                fields:
+                  - { label: "Upload Local File", name: "upload", widget: "image", required: false }
+                  - { label: "Or External Image URL", name: "url", widget: "string", required: false, hint: "Paste full https:// image URL." }
               - { label: "Description", name: "description", widget: "text" }
               - label: "Tools"
                 name: "tools"
                 widget: "list"
+                summary: "{{fields.tool}}"
                 field: { label: "Tool", name: "tool", widget: "string" }
               - label: "Additional Info"
                 name: "additionalInfo"
                 widget: "list"
+                summary: "{{fields.info}}"
                 field: { label: "Info", name: "info", widget: "string" }
               - label: "Gallery"
                 name: "gallery"
                 widget: "list"
-                field: { label: "Image URL", name: "image", widget: "string" }
+                summary: "{{fields.url}}"
+                fields:
+                  - { label: "Upload Local File", name: "upload", widget: "image", required: false }
+                  - { label: "Or External Image URL", name: "url", widget: "string", required: false, hint: "Paste full https:// image URL." }
               - { label: "Year", name: "year", widget: "number", value_type: "int" }

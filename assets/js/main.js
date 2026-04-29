@@ -8,6 +8,17 @@ const isLocalPreview = () => {
     return host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:';
 };
 
+function resolveMediaValue(value) {
+    if (!value) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'object') {
+        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
+        const url = typeof value.url === 'string' ? value.url.trim() : '';
+        return upload || url || '';
+    }
+    return '';
+}
+
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -310,7 +321,7 @@ function renderProjects(projects) {
     const grid = document.getElementById('portfolio-grid');
     grid.innerHTML = projects.map((project, index) => {
         const gridClass = 'md:col-span-1';
-        const projectImage = (project.image || '').trim();
+        const projectImage = resolveMediaValue(project.image);
         
         return `
             <div class="project-card group ${gridClass} animate-slide-up" style="animation-delay: ${index * 0.1}s" onclick="openModal(${project.id})">
@@ -387,7 +398,8 @@ async function openModal(projectId, options = {}) {
     const animateIn = options.animateIn !== false;
 
     const additionalInfo = (project.additionalInfo || []).filter(item => item && item.trim());
-    const projectImages = [project.image, ...(project.gallery || [])].filter(img => img && img.trim());
+    const projectImages = [resolveMediaValue(project.image), ...((project.gallery || []).map(resolveMediaValue))]
+        .filter((img) => img && img.trim());
 
     content.innerHTML = `
         <div id="modal-content-inner" class="opacity-100 translate-y-0 transition-all duration-300">
@@ -543,7 +555,7 @@ function initHeroProjectScrubber(projects) {
         const project = projects[safeIndex];
         if (!project) return;
         currentIndex = safeIndex;
-        image.src = project.image;
+        image.src = resolveMediaValue(project.image);
         image.alt = project.title;
     };
 

@@ -1,6 +1,32 @@
 // Global data storage
 let portfolioData = {};
 const STORAGE_KEY = 'portfolioData';
+function resolveMediaValue(value) {
+    if (!value) return '';
+    if (typeof value === 'string') return value.trim();
+    if (typeof value === 'object') {
+        const upload = typeof value.upload === 'string' ? value.upload.trim() : '';
+        const url = typeof value.url === 'string' ? value.url.trim() : '';
+        return upload || url || '';
+    }
+    return '';
+}
+
+function normalizePortfolioDataShape() {
+    portfolioData.profile = portfolioData.profile || {};
+    portfolioData.profile.contact = portfolioData.profile.contact || {};
+    portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
+
+    portfolioData.projects = portfolioData.projects.map((project) => {
+        const nextProject = { ...project };
+        nextProject.image = resolveMediaValue(nextProject.image);
+        nextProject.gallery = Array.isArray(nextProject.gallery)
+            ? nextProject.gallery.map(resolveMediaValue).filter(Boolean)
+            : [];
+        return nextProject;
+    });
+}
+
 function getDefaultPortfolioData() {
     return {
         profile: {
@@ -75,12 +101,6 @@ function getDefaultPortfolioData() {
 // Initialize admin dashboard
 document.addEventListener('DOMContentLoaded', () => {
     loadPortfolioData();
-    const newImageInput = document.getElementById('new-image');
-    if (newImageInput) {
-        newImageInput.addEventListener('input', () => {
-            syncNewProjectImagePreview(newImageInput.value);
-        });
-    }
 });
 
 // Load portfolio data from JSON
@@ -112,9 +132,7 @@ async function loadPortfolioData() {
             persistPortfolioData();
         }
 
-        portfolioData.profile = portfolioData.profile || {};
-        portfolioData.profile.contact = portfolioData.profile.contact || {};
-        portfolioData.projects = Array.isArray(portfolioData.projects) ? portfolioData.projects : [];
+        normalizePortfolioDataShape();
         populateProfileForm();
         renderProjects();
         updateJSONPreview();
@@ -160,12 +178,7 @@ function renderProjects() {
     const projectsList = document.getElementById('projects-list');
     if (!projectsList || !portfolioData.projects) return;
 
-    projectsList.innerHTML = portfolioData.projects.map((project, index) => {
-        const imageValue = project.image || '';
-        const imagePreview = imageValue
-            ? `<img src="${imageValue}" alt="${project.title}" class="w-full h-full object-cover rounded">`
-            : `<div class="w-full h-full flex items-center justify-center text-xs text-gray-400">No image</div>`;
-        return `
+    projectsList.innerHTML = portfolioData.projects.map((project, index) => `
         <div class="bg-white rounded-lg p-8 border border-gray-200">
             <div class="flex justify-between items-start mb-6">
                 <h3 class="text-xl font-bold">${project.title}</h3>
@@ -191,10 +204,6 @@ function renderProjects() {
                     <input type="text" value="${project.image}" onchange="updateProject(${index}, 'image', this.value)" class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-black">
                     <label class="block text-xs text-gray-500 mt-2 mb-1">Or upload local image</label>
                     <input type="file" accept="image/*" onchange="uploadProjectImage(${index}, this.files[0])" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                    <div class="mt-3 border border-gray-200 rounded p-2 bg-gray-50">
-                        <p class="text-[11px] font-semibold text-gray-500 mb-2 uppercase tracking-wide">Image Preview</p>
-                        <div class="w-full aspect-[16/10] bg-white border border-dashed border-gray-300 rounded p-1">${imagePreview}</div>
-                    </div>
                 </div>
             </div>
             <div class="mb-6">
@@ -230,16 +239,12 @@ function renderProjects() {
                             <input type="text" value="${img}" onchange="updateProjectListItem(${index}, 'gallery', ${imgIndex}, this.value)" class="flex-1 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-black" placeholder="assets/img/projects/another-image.png">
                             <input type="file" accept="image/*" onchange="uploadProjectGalleryImage(${index}, ${imgIndex}, this.files[0])" class="w-full md:w-48 border border-gray-300 rounded px-2 py-2 text-xs">
                             <button type="button" onclick="removeProjectListItem(${index}, 'gallery', ${imgIndex})" class="shrink-0 text-red-600 hover:text-red-800 font-semibold text-xs px-3 py-2 border border-red-200 rounded md:border-0 md:rounded-none md:px-2 md:py-0">Delete</button>
-                            <div class="w-full md:w-36 h-20 border border-gray-200 rounded bg-gray-50 overflow-hidden">
-                                ${img ? `<img src="${img}" alt="Gallery image" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-[10px] text-gray-400">No image</div>`}
-                            </div>
                         </div>
                     `).join('')}
                 </div>
             </div>
         </div>
-    `;
-    }).join('');
+    `).join('');
 }
 
 // Update project data
@@ -289,7 +294,7 @@ function addProject() {
         category: document.getElementById('new-category').value,
         image: document.getElementById('new-image').value,
         description: document.getElementById('new-description').value,
-        tools: document.getElementById('new-tools').value.split(',').map(t => t.trim()).filter(Boolean),
+        tools: document.getElementById('new-tools').value.split(',').map(t => t.trim()),
         additionalInfo: [],
         gallery: [],
         year: document.getElementById('new-year').value
@@ -302,7 +307,6 @@ function addProject() {
 
     portfolioData.projects.push(newProject);
     document.getElementById('new-project-form').reset();
-    syncNewProjectImagePreview('');
     renderProjects();
     updateJSONPreview();
     alert('Project added successfully!');
@@ -366,21 +370,9 @@ async function uploadNewProjectImage(file) {
     try {
         const dataUrl = await readAndCompressImage(file);
         document.getElementById('new-image').value = dataUrl;
-        syncNewProjectImagePreview(dataUrl);
     } catch (error) {
         alert(error.message);
     }
-}
-
-function syncNewProjectImagePreview(imageValue) {
-    const preview = document.getElementById('new-image-preview');
-    if (!preview) return;
-    const value = (imageValue || '').trim();
-    if (!value) {
-        preview.innerHTML = '<span class="text-xs text-gray-400">No image selected</span>';
-        return;
-    }
-    preview.innerHTML = `<img src="${value}" alt="New project preview" class="w-full h-full object-cover rounded">`;
 }
 
 async function uploadProjectImage(index, file) {
