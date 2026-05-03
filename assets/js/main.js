@@ -1,5 +1,26 @@
+function scrollPageToTop() {
+    window.scrollTo(0, 0);
+}
+
+function hasInPageAnchorTarget() {
+    const raw = typeof location.hash === 'string' ? location.hash : '';
+    if (!raw || raw === '#') return false;
+    const id = decodeURIComponent(raw.slice(1)).trim();
+    if (!id) return false;
+    return Boolean(document.getElementById(id));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    initApp();
+    if (!hasInPageAnchorTarget()) {
+        scrollPageToTop();
+    }
+    void initApp().finally(() => {
+        if (!hasInPageAnchorTarget()) {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => scrollPageToTop());
+            });
+        }
+    });
 });
 
 const STORAGE_KEY = 'portfolioData';
