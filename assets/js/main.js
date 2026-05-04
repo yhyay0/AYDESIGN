@@ -5,7 +5,12 @@ function scrollPageToTop() {
 function hasInPageAnchorTarget() {
     const raw = typeof location.hash === 'string' ? location.hash : '';
     if (!raw || raw === '#') return false;
-    const id = decodeURIComponent(raw.slice(1)).trim();
+    let id = '';
+    try {
+        id = decodeURIComponent(raw.slice(1)).trim();
+    } catch (error) {
+        return false;
+    }
     if (!id) return false;
     return Boolean(document.getElementById(id));
 }
