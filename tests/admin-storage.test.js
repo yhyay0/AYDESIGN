@@ -36,7 +36,7 @@ test('keeps legacy localStorage data when IndexedDB is unavailable', async () =>
 
     assert.deepEqual(data, saved);
     assert.equal(storage.get('portfolioData'), JSON.stringify(saved));
-}
+});
 
 test('does not delete valid legacy data when fallback persistence fails', async () => {
     const saved = { profile: { role: 'Designer' }, projects: [] };
@@ -57,7 +57,7 @@ test('does not delete valid legacy data when fallback persistence fails', async 
 
     assert.deepEqual(data, saved);
     assert.equal(removed, false);
-}
+});
 
 test('clears invalid legacy localStorage JSON', async () => {
     let removed = false;
@@ -74,4 +74,4 @@ test('clears invalid legacy localStorage JSON', async () => {
 
     assert.equal(data, null);
     assert.equal(removed, true);
-}
+});
