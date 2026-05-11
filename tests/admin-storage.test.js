@@ -34,7 +34,7 @@ test('keeps legacy localStorage data when IndexedDB is unavailable', async () =>
 
     const data = await context.getStoredData();
 
-    assert.deepEqual(data, saved);
+    assert.equal(JSON.stringify(data), JSON.stringify(saved));
     assert.equal(storage.get('portfolioData'), JSON.stringify(saved));
 });
 
@@ -55,7 +55,7 @@ test('does not delete valid legacy data when fallback persistence fails', async 
 
     const data = await context.getStoredData();
 
-    assert.deepEqual(data, saved);
+    assert.equal(JSON.stringify(data), JSON.stringify(saved));
     assert.equal(removed, false);
 });
 
