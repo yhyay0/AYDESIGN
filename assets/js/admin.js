@@ -86,6 +86,36 @@ async function clearStoredData() {
     }
     localStorage.removeItem(STORAGE_KEY);
 }
+
+async function fetchPortfolioFileData() {
+    const response = await fetch('data/portfolio.json');
+    if (!response.ok) {
+        throw new Error(`Failed to fetch data/portfolio.json (status ${response.status})`);
+    }
+    return response.json();
+}
+
+function serializePortfolioDataForComparison(data) {
+    try {
+        return JSON.stringify(data);
+    } catch (error) {
+        return '';
+    }
+}
+
+function shouldUseStoredPortfolioData(storedData, fileData) {
+    if (!storedData) return false;
+    if (!fileData) return true;
+    if (serializePortfolioDataForComparison(storedData) === serializePortfolioDataForComparison(fileData)) {
+        return true;
+    }
+    if (typeof confirm !== 'function') return true;
+
+    return confirm(
+        'Local autosaved portfolio data differs from data/portfolio.json.\n\n' +
+        'Click OK to keep local autosaved edits, or Cancel to discard local autosave and load the latest site data.'
+    );
+}
 function normalizeImageReference(value) {
     if (!value || typeof value !== 'string') return '';
     const trimmed = value.trim();
@@ -211,23 +241,23 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadPortfolioData() {
     try {
         const storedData = await getStoredData();
+        let fileData = null;
         let loadedFromLocal = false;
-        if (storedData) {
+        try {
+            fileData = await fetchPortfolioFileData();
+        } catch (fetchError) {
+            console.warn('Fetch failed, falling back to local/default data (likely file:// access).', fetchError);
+        }
+
+        if (shouldUseStoredPortfolioData(storedData, fileData)) {
             portfolioData = storedData;
             loadedFromLocal = true;
+        } else if (storedData && fileData) {
+            await clearStoredData();
         }
 
         if (!loadedFromLocal) {
-            try {
-                const response = await fetch('data/portfolio.json');
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch data/portfolio.json (status ${response.status})`);
-                }
-                portfolioData = await response.json();
-            } catch (fetchError) {
-                console.warn('Fetch failed, falling back to default data (likely file:// access).', fetchError);
-                portfolioData = getDefaultPortfolioData();
-            }
+            portfolioData = fileData || getDefaultPortfolioData();
             persistPortfolioData();
         }
 
