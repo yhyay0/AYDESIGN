@@ -44,15 +44,19 @@ async function getStoredData() {
 
     const localData = localStorage.getItem(STORAGE_KEY);
     if (!localData) return null;
+    let parsed;
     try {
-        const parsed = JSON.parse(localData);
-        await saveStoredData(parsed);
-        localStorage.removeItem(STORAGE_KEY);
-        return parsed;
+        parsed = JSON.parse(localData);
     } catch (error) {
         localStorage.removeItem(STORAGE_KEY);
         return null;
     }
+
+    const storageBackend = await saveStoredData(parsed);
+    if (storageBackend === 'indexedDB') {
+        localStorage.removeItem(STORAGE_KEY);
+    }
+    return parsed;
 }
 
 async function saveStoredData(value) {
@@ -65,9 +69,16 @@ async function saveStoredData(value) {
             req.onsuccess = () => resolve();
             req.onerror = () => reject(req.error || new Error('IndexedDB write failed'));
         });
+        return 'indexedDB';
     } catch (error) {
         console.warn('IndexedDB write failed, using localStorage fallback.', error);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+            return 'localStorage';
+        } catch (fallbackError) {
+            console.error('Local storage fallback failed. Portfolio changes may not be saved.', fallbackError);
+            return null;
+        }
     }
 }
 
