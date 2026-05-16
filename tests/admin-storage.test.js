@@ -22,6 +22,10 @@ function loadAdminContext(localStorage) {
     return context;
 }
 
+function assertSameJson(actual, expected) {
+    assert.equal(JSON.stringify(actual), JSON.stringify(expected));
+}
+
 test('keeps legacy localStorage data when IndexedDB is unavailable', async () => {
     const saved = { profile: { role: 'Designer' }, projects: [] };
     const storage = new Map([['portfolioData', JSON.stringify(saved)]]);
@@ -34,7 +38,7 @@ test('keeps legacy localStorage data when IndexedDB is unavailable', async () =>
 
     const data = await context.getStoredData();
 
-    assert.deepEqual(data, saved);
+    assertSameJson(data, saved);
     assert.equal(storage.get('portfolioData'), JSON.stringify(saved));
 });
 
@@ -55,7 +59,7 @@ test('does not delete valid legacy data when fallback persistence fails', async 
 
     const data = await context.getStoredData();
 
-    assert.deepEqual(data, saved);
+    assertSameJson(data, saved);
     assert.equal(removed, false);
 });
 
