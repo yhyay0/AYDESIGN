@@ -74,7 +74,7 @@ async function testLocalStorageMigrationKeepsFallbackWhenIndexedDbUnavailable() 
 
     const result = await getStoredData();
 
-    assert.deepEqual(result, storedPortfolio);
+    assert.equal(JSON.stringify(result), serialized);
     assert.equal(
         localStorage.getItem('portfolioData'),
         serialized,
