@@ -6,6 +6,7 @@ const STORAGE_DB_VERSION = 1;
 const STORAGE_STORE_NAME = 'keyValue';
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
 let storageDbPromise = null;
+let lastPersistErrorMessage = '';
 
 function getStorageDb() {
     if (storageDbPromise) return storageDbPromise;
@@ -44,15 +45,23 @@ async function getStoredData() {
 
     const localData = localStorage.getItem(STORAGE_KEY);
     if (!localData) return null;
+    let parsed;
     try {
-        const parsed = JSON.parse(localData);
-        await saveStoredData(parsed);
-        localStorage.removeItem(STORAGE_KEY);
-        return parsed;
+        parsed = JSON.parse(localData);
     } catch (error) {
         localStorage.removeItem(STORAGE_KEY);
         return null;
     }
+
+    try {
+        const savedTo = await saveStoredData(parsed);
+        if (savedTo === 'indexedDB') {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    } catch (error) {
+        console.warn('Unable to migrate local portfolio data. Keeping localStorage copy.', error);
+    }
+    return parsed;
 }
 
 async function saveStoredData(value) {
@@ -65,9 +74,11 @@ async function saveStoredData(value) {
             req.onsuccess = () => resolve();
             req.onerror = () => reject(req.error || new Error('IndexedDB write failed'));
         });
+        return 'indexedDB';
     } catch (error) {
         console.warn('IndexedDB write failed, using localStorage fallback.', error);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        return 'localStorage';
     }
 }
 
@@ -568,7 +579,18 @@ function updateJSONPreview() {
 }
 
 function persistPortfolioData() {
-    saveStoredData(portfolioData);
+    return saveStoredData(portfolioData)
+        .then(() => {
+            lastPersistErrorMessage = '';
+        })
+        .catch((error) => {
+            console.error('Failed to autosave portfolio data.', error);
+            const message = 'Autosave failed. Download or copy the current JSON before leaving this page.';
+            if (lastPersistErrorMessage !== message) {
+                lastPersistErrorMessage = message;
+                alert(message);
+            }
+        });
 }
 
 async function clearLocalData() {
