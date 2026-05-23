@@ -5,7 +5,14 @@ function scrollPageToTop() {
 function hasInPageAnchorTarget() {
     const raw = typeof location.hash === 'string' ? location.hash : '';
     if (!raw || raw === '#') return false;
-    const id = decodeURIComponent(raw.slice(1)).trim();
+    const encodedId = raw.slice(1).trim();
+    if (!encodedId) return false;
+    let id = encodedId;
+    try {
+        id = decodeURIComponent(encodedId).trim();
+    } catch (error) {
+        // Malformed URL fragments should not block page startup.
+    }
     if (!id) return false;
     return Boolean(document.getElementById(id));
 }
