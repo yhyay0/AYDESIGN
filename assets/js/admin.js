@@ -515,9 +515,12 @@ async function uploadNewProjectImage(file) {
 }
 
 async function uploadProjectImage(index, file) {
+    const project = portfolioData.projects[index];
+    if (!project) return;
     try {
         const dataUrl = await readAndCompressImage(file);
-        portfolioData.projects[index].image = dataUrl;
+        if (!portfolioData.projects.includes(project)) return;
+        project.image = dataUrl;
         renderProjects();
         updateJSONPreview();
     } catch (error) {
@@ -526,12 +529,15 @@ async function uploadProjectImage(index, file) {
 }
 
 async function uploadProjectGalleryImage(index, itemIndex, file) {
+    const project = portfolioData.projects[index];
+    if (!project) return;
     try {
         const dataUrl = await readAndCompressImage(file);
-        if (!Array.isArray(portfolioData.projects[index].gallery)) {
-            portfolioData.projects[index].gallery = [];
+        if (!portfolioData.projects.includes(project)) return;
+        if (!Array.isArray(project.gallery)) {
+            project.gallery = [];
         }
-        portfolioData.projects[index].gallery[itemIndex] = dataUrl;
+        project.gallery[itemIndex] = dataUrl;
         renderProjects();
         updateJSONPreview();
     } catch (error) {
