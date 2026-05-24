@@ -146,7 +146,7 @@ async function testProjectImageUploadFollowsOriginalProjectAfterReorder() {
         }
     });
 
-    const projects = await vm.runInContext(`
+    const projects = JSON.parse(await vm.runInContext(`
         (async () => {
             portfolioData = {
                 projects: [
@@ -160,13 +160,13 @@ async function testProjectImageUploadFollowsOriginalProjectAfterReorder() {
             moveProject(0, 1);
             resolveUpload('new-image-a');
             await upload;
-            return portfolioData.projects.map((project) => ({
+            return JSON.stringify(portfolioData.projects.map((project) => ({
                 id: project.id,
                 image: project.image,
                 gallery: project.gallery
-            }));
+            })));
         })();
-    `, context);
+    `, context));
 
     assert.deepStrictEqual(projects, [
         { id: 2, image: 'old-b', gallery: ['old-gallery-b'] },
@@ -194,7 +194,7 @@ async function testGalleryUploadFollowsOriginalProjectAfterReorder() {
         }
     });
 
-    const projects = await vm.runInContext(`
+    const projects = JSON.parse(await vm.runInContext(`
         (async () => {
             portfolioData = {
                 projects: [
@@ -208,13 +208,13 @@ async function testGalleryUploadFollowsOriginalProjectAfterReorder() {
             moveProject(0, 1);
             resolveUpload('new-gallery-a');
             await upload;
-            return portfolioData.projects.map((project) => ({
+            return JSON.stringify(portfolioData.projects.map((project) => ({
                 id: project.id,
                 image: project.image,
                 gallery: project.gallery
-            }));
+            })));
         })();
-    `, context);
+    `, context));
 
     assert.deepStrictEqual(projects, [
         { id: 2, image: 'old-b', gallery: ['old-gallery-b'] },
