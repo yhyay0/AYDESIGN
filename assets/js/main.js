@@ -2,24 +2,39 @@ function scrollPageToTop() {
     window.scrollTo(0, 0);
 }
 
-function hasInPageAnchorTarget() {
+function getInPageAnchorTarget() {
     const raw = typeof location.hash === 'string' ? location.hash : '';
-    if (!raw || raw === '#') return false;
-    const id = decodeURIComponent(raw.slice(1)).trim();
-    if (!id) return false;
-    return Boolean(document.getElementById(id));
+    if (!raw || raw === '#') return null;
+    let id;
+    try {
+        id = decodeURIComponent(raw.slice(1)).trim();
+    } catch (error) {
+        return null;
+    }
+    if (!id) return null;
+    return document.getElementById(id);
+}
+
+function scrollPageToAnchorTarget(target) {
+    if (!target) return;
+    target.scrollIntoView();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (!hasInPageAnchorTarget()) {
+    if (!getInPageAnchorTarget()) {
         scrollPageToTop();
     }
     void initApp().finally(() => {
-        if (!hasInPageAnchorTarget()) {
+        requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-                requestAnimationFrame(() => scrollPageToTop());
+                const target = getInPageAnchorTarget();
+                if (target) {
+                    scrollPageToAnchorTarget(target);
+                } else {
+                    scrollPageToTop();
+                }
             });
-        }
+        });
     });
 });
 
