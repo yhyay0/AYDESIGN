@@ -74,6 +74,7 @@ function testMalformedHashDoesNotThrow() {
 
 async function testColdLoadHashScrollsToAnchor() {
     const rafCallbacks = [];
+    const coldLoadListeners = {};
     const target = {
         scrolled: false,
         scrollIntoView() {
@@ -92,7 +93,7 @@ async function testColdLoadHashScrollsToAnchor() {
         },
         document: {
             addEventListener(type, handler) {
-                listeners[type] = handler;
+                coldLoadListeners[type] = handler;
             },
             getElementById(id) {
                 return id === 'work' ? target : null;
@@ -114,7 +115,7 @@ async function testColdLoadHashScrollsToAnchor() {
     });
 
     vm.runInContext('initApp = async () => {};', context);
-    listeners.DOMContentLoaded();
+    coldLoadListeners.DOMContentLoaded();
     await Promise.resolve();
     await Promise.resolve();
     while (rafCallbacks.length > 0) {
