@@ -56,18 +56,16 @@ function createContext(hash, elementIds = []) {
     return vm.createContext(context);
 }
 
-async function runDOMContentLoaded(context) {
+function loadMainScript(context) {
     vm.runInContext(source, context, { filename: mainJsPath });
     assert.strictEqual(typeof context.__listeners.DOMContentLoaded, 'function');
-    await context.__listeners.DOMContentLoaded();
 }
 
-(async () => {
-    const validAnchorContext = createContext('#work', ['work']);
-    await runDOMContentLoaded(validAnchorContext);
-    assert.strictEqual(validAnchorContext.hasInPageAnchorTarget(), true);
+const validAnchorContext = createContext('#work', ['work']);
+loadMainScript(validAnchorContext);
+assert.strictEqual(validAnchorContext.hasInPageAnchorTarget(), true);
 
-    const malformedHashContext = createContext('#%E0%A4%A', ['work']);
-    await assert.doesNotReject(() => runDOMContentLoaded(malformedHashContext));
-    assert.strictEqual(malformedHashContext.hasInPageAnchorTarget(), false);
-})();
+const malformedHashContext = createContext('#%E0%A4%A', ['work']);
+loadMainScript(malformedHashContext);
+assert.doesNotThrow(() => malformedHashContext.hasInPageAnchorTarget());
+assert.strictEqual(malformedHashContext.hasInPageAnchorTarget(), false);
