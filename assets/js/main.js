@@ -27,6 +27,8 @@ const STORAGE_KEY = 'portfolioData';
 const STORAGE_DB_NAME = 'AYDesignStorage';
 const STORAGE_DB_VERSION = 1;
 const STORAGE_STORE_NAME = 'keyValue';
+const STORAGE_RECORD_MARKER = '__ayPortfolioStorage';
+const STORAGE_RECORD_VERSION = 1;
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
 let storageDbPromise = null;
 
@@ -45,9 +47,20 @@ function getStorageDb() {
             }
         };
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+        request.onerror = () => {
+            storageDbPromise = null;
+            reject(request.error || new Error('Failed to open IndexedDB'));
+        };
     });
     return storageDbPromise;
+}
+
+function unwrapStoredData(record) {
+    if (!record || typeof record !== 'object') return null;
+    if (record[STORAGE_RECORD_MARKER] === STORAGE_RECORD_VERSION && record.value && typeof record.value === 'object') {
+        return record.value;
+    }
+    return record;
 }
 
 async function getStoredData() {
@@ -57,7 +70,7 @@ async function getStoredData() {
             const tx = db.transaction(STORAGE_STORE_NAME, 'readonly');
             const store = tx.objectStore(STORAGE_STORE_NAME);
             const req = store.get(STORAGE_KEY);
-            req.onsuccess = () => resolve(req.result || null);
+            req.onsuccess = () => resolve(unwrapStoredData(req.result));
             req.onerror = () => reject(req.error || new Error('IndexedDB read failed'));
         });
     } catch (error) {
@@ -210,7 +223,7 @@ async function loadPortfolioData() {
     const localData = localStorage.getItem(STORAGE_KEY);
     if (localData) {
         try {
-            return normalizePortfolioDataShape(JSON.parse(localData));
+            return normalizePortfolioDataShape(unwrapStoredData(JSON.parse(localData)));
         } catch (parseError) {
             console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
             localStorage.removeItem(STORAGE_KEY);
