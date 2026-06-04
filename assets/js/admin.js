@@ -4,8 +4,12 @@ const STORAGE_KEY = 'portfolioData';
 const STORAGE_DB_NAME = 'AYDesignStorage';
 const STORAGE_DB_VERSION = 1;
 const STORAGE_STORE_NAME = 'keyValue';
+const STORAGE_RECORD_MARKER = '__ayPortfolioStorage';
+const STORAGE_RECORD_VERSION = 1;
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
 let storageDbPromise = null;
+let autosaveFailureNotified = false;
+let persistQueue = Promise.resolve();
 
 function getStorageDb() {
     if (storageDbPromise) return storageDbPromise;
@@ -22,52 +26,134 @@ function getStorageDb() {
             }
         };
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+        request.onerror = () => {
+            storageDbPromise = null;
+            reject(request.error || new Error('Failed to open IndexedDB'));
+        };
     });
     return storageDbPromise;
 }
 
-async function getStoredData() {
+function createStorageRecord(value, savedAt = Date.now()) {
+    return {
+        [STORAGE_RECORD_MARKER]: STORAGE_RECORD_VERSION,
+        savedAt,
+        value
+    };
+}
+
+function unwrapStorageRecord(record, source) {
+    if (!record || typeof record !== 'object') return null;
+    if (record[STORAGE_RECORD_MARKER] === STORAGE_RECORD_VERSION && record.value && typeof record.value === 'object') {
+        return {
+            value: record.value,
+            savedAt: Number.isFinite(record.savedAt) ? record.savedAt : 0,
+            isVersioned: true,
+            source
+        };
+    }
+    return {
+        value: record,
+        savedAt: 0,
+        isVersioned: false,
+        source
+    };
+}
+
+async function readIndexedDbRecord() {
     try {
         const db = await getStorageDb();
-        const data = await new Promise((resolve, reject) => {
+        const record = await new Promise((resolve, reject) => {
             const tx = db.transaction(STORAGE_STORE_NAME, 'readonly');
             const store = tx.objectStore(STORAGE_STORE_NAME);
             const req = store.get(STORAGE_KEY);
             req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => reject(req.error || new Error('IndexedDB read failed'));
         });
-        if (data) return data;
+        return unwrapStorageRecord(record, 'indexedDB');
     } catch (error) {
         console.warn('IndexedDB read failed, trying localStorage.', error);
+        return null;
     }
+}
 
+function readLocalStorageRecord() {
     const localData = localStorage.getItem(STORAGE_KEY);
     if (!localData) return null;
     try {
-        const parsed = JSON.parse(localData);
-        await saveStoredData(parsed);
-        localStorage.removeItem(STORAGE_KEY);
-        return parsed;
+        return unwrapStorageRecord(JSON.parse(localData), 'localStorage');
     } catch (error) {
         localStorage.removeItem(STORAGE_KEY);
         return null;
     }
 }
 
-async function saveStoredData(value) {
+function selectStoredRecord(indexedDbRecord, localStorageRecord) {
+    if (!indexedDbRecord) return localStorageRecord;
+    if (!localStorageRecord) return indexedDbRecord;
+
+    if (indexedDbRecord.savedAt || localStorageRecord.savedAt) {
+        return localStorageRecord.savedAt >= indexedDbRecord.savedAt ? localStorageRecord : indexedDbRecord;
+    }
+
+    return localStorageRecord;
+}
+
+async function getStoredData() {
+    const selectedRecord = selectStoredRecord(await readIndexedDbRecord(), readLocalStorageRecord());
+    if (!selectedRecord) return null;
+
+    if (!selectedRecord.isVersioned || selectedRecord.source === 'localStorage') {
+        try {
+            await saveStoredData(selectedRecord.value, selectedRecord.savedAt || Date.now());
+        } catch (error) {
+            console.warn('Failed to migrate stored portfolio data.', error);
+        }
+    }
+
+    return selectedRecord.value;
+}
+
+async function saveIndexedDbRecord(record) {
+    const db = await getStorageDb();
+    await new Promise((resolve, reject) => {
+        const tx = db.transaction(STORAGE_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORAGE_STORE_NAME);
+        const req = store.put(record, STORAGE_KEY);
+        req.onerror = () => reject(req.error || new Error('IndexedDB write failed'));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+        tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+    });
+}
+
+async function saveStoredData(value, savedAt = Date.now()) {
+    const record = createStorageRecord(value, savedAt);
+    let localBackupWritten = false;
     try {
-        const db = await getStorageDb();
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORAGE_STORE_NAME, 'readwrite');
-            const store = tx.objectStore(STORAGE_STORE_NAME);
-            const req = store.put(value, STORAGE_KEY);
-            req.onsuccess = () => resolve();
-            req.onerror = () => reject(req.error || new Error('IndexedDB write failed'));
-        });
-    } catch (error) {
-        console.warn('IndexedDB write failed, using localStorage fallback.', error);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+        localBackupWritten = true;
+    } catch (localStorageError) {
+        console.warn('localStorage autosave backup failed; trying IndexedDB only.', localStorageError);
+    }
+
+    try {
+        await saveIndexedDbRecord(record);
+        if (localBackupWritten) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+        return record;
+    } catch (indexedDbError) {
+        console.warn('IndexedDB write failed, using localStorage fallback.', indexedDbError);
+        if (localBackupWritten) {
+            return record;
+        }
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+            return record;
+        } catch (localStorageError) {
+            throw new Error(`Portfolio autosave failed: ${localStorageError.message}`);
+        }
     }
 }
 
@@ -564,11 +650,24 @@ function updateJSONPreview() {
     if (preview) {
         preview.value = JSON.stringify(portfolioData, null, 2);
     }
-    persistPortfolioData();
+    persistPortfolioData().catch(handlePersistError);
 }
 
 function persistPortfolioData() {
-    saveStoredData(portfolioData);
+    const snapshot = JSON.parse(JSON.stringify(portfolioData));
+    const savedAt = Date.now();
+    const persistTask = persistQueue
+        .catch(() => {})
+        .then(() => saveStoredData(snapshot, savedAt));
+    persistQueue = persistTask;
+    return persistTask;
+}
+
+function handlePersistError(error) {
+    console.error('Portfolio autosave failed:', error);
+    if (autosaveFailureNotified) return;
+    autosaveFailureNotified = true;
+    alert('Portfolio autosave failed. Please export your JSON before closing this tab.');
 }
 
 async function clearLocalData() {
