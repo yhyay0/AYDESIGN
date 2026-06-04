@@ -5,7 +5,12 @@ function scrollPageToTop() {
 function hasInPageAnchorTarget() {
     const raw = typeof location.hash === 'string' ? location.hash : '';
     if (!raw || raw === '#') return false;
-    const id = decodeURIComponent(raw.slice(1)).trim();
+    let id = '';
+    try {
+        id = decodeURIComponent(raw.slice(1)).trim();
+    } catch (error) {
+        return false;
+    }
     if (!id) return false;
     return Boolean(document.getElementById(id));
 }
@@ -27,6 +32,8 @@ const STORAGE_KEY = 'portfolioData';
 const STORAGE_DB_NAME = 'AYDesignStorage';
 const STORAGE_DB_VERSION = 1;
 const STORAGE_STORE_NAME = 'keyValue';
+const STORAGE_RECORD_MARKER = '__ayPortfolioStorage';
+const STORAGE_RECORD_VERSION = 1;
 const REPO_CDN_BASE = 'https://cdn.jsdelivr.net/gh/yhyay0/AYDESIGN@main/';
 let storageDbPromise = null;
 
@@ -45,24 +52,74 @@ function getStorageDb() {
             }
         };
         request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB'));
+        request.onerror = () => {
+            storageDbPromise = null;
+            reject(request.error || new Error('Failed to open IndexedDB'));
+        };
     });
     return storageDbPromise;
 }
 
-async function getStoredData() {
+function unwrapStorageRecord(record, source) {
+    if (!record || typeof record !== 'object') return null;
+    if (record[STORAGE_RECORD_MARKER] === STORAGE_RECORD_VERSION && record.value && typeof record.value === 'object') {
+        return {
+            value: record.value,
+            savedAt: Number.isFinite(record.savedAt) ? record.savedAt : 0,
+            isVersioned: true,
+            source
+        };
+    }
+    return {
+        value: record,
+        savedAt: 0,
+        isVersioned: false,
+        source
+    };
+}
+
+async function readIndexedDbRecord() {
     try {
         const db = await getStorageDb();
-        return await new Promise((resolve, reject) => {
+        const record = await new Promise((resolve, reject) => {
             const tx = db.transaction(STORAGE_STORE_NAME, 'readonly');
             const store = tx.objectStore(STORAGE_STORE_NAME);
             const req = store.get(STORAGE_KEY);
             req.onsuccess = () => resolve(req.result || null);
             req.onerror = () => reject(req.error || new Error('IndexedDB read failed'));
         });
+        return unwrapStorageRecord(record, 'indexedDB');
     } catch (error) {
         return null;
     }
+}
+
+function readLocalStorageRecord() {
+    const localData = localStorage.getItem(STORAGE_KEY);
+    if (!localData) return null;
+    try {
+        return unwrapStorageRecord(JSON.parse(localData), 'localStorage');
+    } catch (parseError) {
+        console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+    }
+}
+
+function selectStoredRecord(indexedDbRecord, localStorageRecord) {
+    if (!indexedDbRecord) return localStorageRecord;
+    if (!localStorageRecord) return indexedDbRecord;
+
+    if (indexedDbRecord.savedAt || localStorageRecord.savedAt) {
+        return localStorageRecord.savedAt >= indexedDbRecord.savedAt ? localStorageRecord : indexedDbRecord;
+    }
+
+    return localStorageRecord;
+}
+
+async function getStoredData() {
+    const selectedRecord = selectStoredRecord(await readIndexedDbRecord(), readLocalStorageRecord());
+    return selectedRecord ? selectedRecord.value : null;
 }
 function toFastImageUrl(value) {
     if (!value) return '';
@@ -205,16 +262,6 @@ async function loadPortfolioData() {
     const storedData = await getStoredData();
     if (storedData) {
         return normalizePortfolioDataShape(storedData);
-    }
-
-    const localData = localStorage.getItem(STORAGE_KEY);
-    if (localData) {
-        try {
-            return normalizePortfolioDataShape(JSON.parse(localData));
-        } catch (parseError) {
-            console.warn('Invalid local portfolio data. Falling back to data/portfolio.json.', parseError);
-            localStorage.removeItem(STORAGE_KEY);
-        }
     }
     try {
         const response = await fetch(`data/portfolio.json?t=${Date.now()}`);
