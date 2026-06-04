@@ -188,6 +188,10 @@ function storageRecord(value, savedAt) {
     };
 }
 
+function cloneForAssert(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
 (async () => {
     const legacyData = {
         profile: { role: 'Legacy draft' },
@@ -198,7 +202,7 @@ function storageRecord(value, savedAt) {
     });
     const noIndexedDbContext = loadAdmin({ localStorage });
 
-    assert.deepEqual(await noIndexedDbContext.getStoredData(), legacyData);
+    assert.deepEqual(cloneForAssert(await noIndexedDbContext.getStoredData()), legacyData);
     const migratedLocalRecord = JSON.parse(localStorage.getItem(STORAGE_KEY));
     assert.equal(migratedLocalRecord[STORAGE_RECORD_MARKER], 1);
     assert.deepEqual(migratedLocalRecord.value, legacyData);
@@ -217,8 +221,8 @@ function storageRecord(value, savedAt) {
     });
     const staleIndexedDbContext = loadAdmin({ localStorage: newerLocalStorage, indexedDB });
 
-    assert.deepEqual(await staleIndexedDbContext.getStoredData(), newData);
-    assert.deepEqual(indexedDB.state.stored.value, newData);
+    assert.deepEqual(cloneForAssert(await staleIndexedDbContext.getStoredData()), newData);
+    assert.deepEqual(cloneForAssert(indexedDB.state.stored.value), newData);
     assert.equal(newerLocalStorage.getItem(STORAGE_KEY), null);
 
     const heldIndexedDB = createIndexedDb(null, { holdPuts: true });
