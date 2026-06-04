@@ -192,6 +192,14 @@ function cloneForAssert(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
+async function waitForPendingPut(indexedDB) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+        if (indexedDB.state.pendingPuts.length > 0) return;
+        await new Promise((resolve) => setImmediate(resolve));
+    }
+    throw new Error('Timed out waiting for pending IndexedDB put');
+}
+
 (async () => {
     const legacyData = {
         profile: { role: 'Legacy draft' },
@@ -232,6 +240,7 @@ function cloneForAssert(value) {
     const immediateBackup = JSON.parse(backupLocalStorage.getItem(STORAGE_KEY));
     assert.equal(immediateBackup.savedAt, 30);
     assert.deepEqual(immediateBackup.value, newData);
+    await waitForPendingPut(heldIndexedDB);
     heldIndexedDB.state.pendingPuts.splice(0).forEach((complete) => complete());
     await pendingSave;
     assert.equal(backupLocalStorage.getItem(STORAGE_KEY), null);
